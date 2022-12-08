@@ -33,7 +33,7 @@ xlabel('Time [s]');
 ylabel('x,y [m] - theta [rad]');
 grid on;
 
-% clearvars x_rob_plot y_rob_plot theta_rob_plot time i
+clearvars x_rob_plot y_rob_plot theta_rob_plot time i
 
 
 %% Histrograms for the odometry increments
@@ -56,4 +56,21 @@ linkaxes([ax1,ax2,ax3],'x');
 clearvars ax1 ax2 ax3
 
 
+%% Plot of a laserscan
+n_scan      = 1;
+data        = zeros(2, 361);
+data(1,:)   = laserscans{n_scan}.xscan(:);
+data(2,:)   = laserscans{n_scan}.yscan(:);
+R           = [0, -1; 1, 0];
+data        = R * data;
 
+figure(3), clf, hold on;
+plot(data(1,:), data(2,:), '.');
+plot([-1, 0, 1 -1], [-1, 2, -1, -1], 'r');
+plot(0, 0, 'or');
+title(['Laserscan ' num2str(n_scan) ' - time ', num2str(laserscans{n_scan}.t)]);
+
+set(gca,'DataAspectRatio',[1 1 1]);
+grid on;
+
+clearvars n_scan data R

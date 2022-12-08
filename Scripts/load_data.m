@@ -35,15 +35,15 @@ dt           = mean([dt_laserscan, dt_odometry]);
 for i = 1:N_laserscans 
     
     laserscans{i}.r     = laserscan_data(i,:)';                     % copy polar measure
-    laserscans{i}.y     = sin(angles*pi/180) .* laserscan_data(i,:);    % conversion to cartesian
-    laserscans{i}.x     = cos(angles*pi/180) .* laserscan_data(i,:);    % conversion to cartesian
+    laserscans{i}.xscan = cos(angles*pi/180) .* laserscan_data(i,:);% laserscan in polar coordinates
+    laserscans{i}.yscan = sin(angles*pi/180) .* laserscan_data(i,:);% laserscan in polar coordinates
     laserscans{i}.t_odo = odometry_times(i);                        % set true laserscan time
     laserscans{i}.t_lid = laserscan_times(i);                       % set true odometry time
     laserscans{i}.t     = (i-1) * dt;                               % quantized time
     laserscans{i}.x     = x;                                        % save abs. odometry
     laserscans{i}.y     = y;                                        % save abs. odometry
     laserscans{i}.theta = theta;                                    % save abs. odometry
-
+    
     x                   = x     + odometry_data(i,1);               % update odometry
     y                   = y     + odometry_data(i,2);               % update odometry
     theta               = theta + odometry_data(i,3);               % update odometry
