@@ -8,3 +8,6 @@ addpath('Scripts')
 
 % Load the data
 load_data
+
+% Plot the raw data
+plot_raw_data
