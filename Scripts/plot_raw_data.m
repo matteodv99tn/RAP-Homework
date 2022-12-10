@@ -74,3 +74,46 @@ set(gca,'DataAspectRatio',[1 1 1]);
 grid on;
 
 clearvars n_scan data R
+
+if plot_animation
+    
+    fs_plot = 10;
+    fs_meas = 1 / dt;
+    i_step  = round(fs_meas / fs_plot);
+    figure(4), clf, hold on;
+    for i = 1:i_step:length(laserscans)
+
+        plot_pointcloud(laserscans{i});
+        pause(dt);
+
+    end
+
+    clearvars fs_plot fs_meaas i_step i
+end
+clearvars plot_animation
+
+
+
+%% Custom function implementation
+
+function plot_pointcloud(laserscan)
+
+    clf, hold on;
+    
+    data        = zeros(2, 361);
+    data(1,:)   = laserscan.xscan(:);
+    data(2,:)   = laserscan.yscan(:);
+    R           = [0, -1; 1, 0];
+    data        = R * data;
+
+    plot(data(1,:), data(2,:), '.');
+    plot(0.5*[-1, 0, 1 -1], 0.5*[-1, 2, -1, -1], 'r');
+    plot(0, 0, 'or');
+    title(['Laserscan - Time ', num2str(laserscan.t)]);
+    xlim([-12, 12]);
+    ylim([-2, 16]);
+
+    set(gca,'DataAspectRatio',[1 1 1]);
+    grid on;
+
+end
