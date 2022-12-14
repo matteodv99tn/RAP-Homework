@@ -25,3 +25,6 @@ In the file `load_data.m` all data are aggregated in a vector `laserscans` of ma
 - `t_odo, t_lid`: the true times at which the odometry and lidar measurements are taken respectively;
 - `t`: a newly define time based on the average sampling time; the first measurement starts at `t=1`;
 - `x, y, theta`: the current absolute values of the robot provided by the odometry.
+
+
+-prova push
