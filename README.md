@@ -6,8 +6,8 @@ The current repository contains the code developed for the course [_Robotic Acti
 
 
 ## Data
-Data files should be put inside the [Data](Data/) folder; in particular should be present the following files:
-- `simul_LASER_LASER_SIM.txt`: for each row, contains the 361 measurements of the LIDAR scan in a field of view of 180°;
+Data inside the [Data](Data/) folder are obtained by means of the [gridmap navigation simulator](https://www.mrpt.org/list-of-mrpt-apps/application_gridmapnavsimul/) application, an open source software that simulates the mobile robot motion as well as it mesures (with uncertainties); in particular we can generate the following files:
+- `simul_LASER_LASER_SIM.txt`: each row contains the measurements of the LIDAR at each time step; in the particular case, the scan has a field of view of 180° that's divided in 361 samples;
 - `simul_LASER_LASER_SIM_times.txt`: each row contains the absolute acquisition time of the respective LIDAR scan in the previous file;
 - `simul_ODO.txt`: each line contains the increment of the robot odometry, variables $x,y,\theta$;
 - `simul_ODO_times.txt`: each line contains the absolute acquisition time of the respective odometry increment.
