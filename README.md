@@ -27,4 +27,5 @@ In the file `load_data.m` all data are aggregated in a vector `laserscans` of ma
 - `x, y, theta`: the current absolute values of the robot provided by the odometry.
 
 
--prova push
+## Bibliography
+"A line segment extraction algorithm using laser data based on seeded region growing": https://journals.sagepub.com/doi/pdf/10.1177/1729881418755245
