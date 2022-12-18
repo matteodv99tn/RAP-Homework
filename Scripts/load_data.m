@@ -12,20 +12,24 @@ disp(['Number of laserscan entries: ', num2str(N_laserscans)])
 disp(['Number of odometry entries:  ', num2str(N_odometry)])
 
 if(size(laserscan_data, 1) ~= size(laserscan_times, 1))
-    disp('WARNING: lasescar data and times have different number of elements!')
+    disp('WARNING: lasescar data and times have different number of elements!');
 end
 if(size(odometry_data, 1) ~= size(laserscan_times, 1))
-    disp('WARNING: odometry data and times have different number of elements!')
+    disp('WARNING: odometry data and times have different number of elements!');
+end
+if(size(laserscan_data, 2) ~= lidar_N)
+    disp('WARNING: number of data in the laserscans is different from the one reported in configuration');
 end
 
 
 %% Organise data in cell arrays
-laserscans = cell(1, N_laserscans); % cell-array with all LIDAR scans and other data
-angles     = -90:0.5:90;            % LIDAR angles
+laserscans  = cell(1, N_laserscans);            % cell-array with all LIDAR scans and other data
+half_fov    = lidar_fov / 2;
+angles      = linspace(-half_fov, half_fov, lidar_N);   % LIDAR angles
 
-x           = 0;                    % absolute odometry coordinate value
-y           = 0;                    % absolute odometry coordinate value
-theta       = 0;                    % absolute odometry coordinate value
+x           = 0;                                % absolute odometry coordinate value
+y           = 0;                                % absolute odometry coordinate value
+theta       = 0;                                % absolute odometry coordinate value
 
 % To make easier analysis, we assume a constant sampling time
 dt_laserscan = mean(laserscan_times(2:end) - laserscan_times(1:end-1));
@@ -34,9 +38,11 @@ dt           = mean([dt_laserscan, dt_odometry]);
 
 for i = 1:N_laserscans 
     
-    laserscans{i}.r     = laserscan_data(i,:)';                     % copy polar measure
-    laserscans{i}.xscan = cos(angles*pi/180) .* laserscan_data(i,:);% laserscan in polar coordinates
-    laserscans{i}.yscan = sin(angles*pi/180) .* laserscan_data(i,:);% laserscan in polar coordinates
+    laserscans{i}.r     = laserscan_data(i,:)';                     % copy polar coordinate measure
+    laserscans{i}.xscan = cos(angles*pi/180) .* laserscan_data(i,:);% laserscan in cartesian coords.
+    laserscans{i}.yscan = sin(angles*pi/180) .* laserscan_data(i,:);% laserscan in cartesian coords.
+    laserscans{i}.scan  = [laserscans{i}.xscan; laserscans{i}.yscan]; % combine cartesian measurements
+    laserscans{i}.Theta = angles;                                   % lidar's angles
     laserscans{i}.t_odo = odometry_times(i);                        % set true laserscan time
     laserscans{i}.t_lid = laserscan_times(i);                       % set true odometry time
     laserscans{i}.t     = (i-1) * dt;                               % quantized time
@@ -44,9 +50,9 @@ for i = 1:N_laserscans
     laserscans{i}.y     = y;                                        % save abs. odometry
     laserscans{i}.theta = theta;                                    % save abs. odometry
     
-    x                   = x     + odometry_data(i,1);               % update odometry
-    y                   = y     + odometry_data(i,2);               % update odometry
-    theta               = theta + odometry_data(i,3);               % update odometry
+    x                   = cos(theta)*x + odometry_data(i,1);        % update odometry
+    y                   = sin(theta)*y + odometry_data(i,2);        % update odometry
+    theta               = theta        + odometry_data(i,3);        % update odometry
 
 end
 
