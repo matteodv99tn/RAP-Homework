@@ -28,4 +28,8 @@ In the file `load_data.m` all data are aggregated in a vector `laserscans` of ma
 
 
 ## Bibliography
-"A line segment extraction algorithm using laser data based on seeded region growing": https://journals.sagepub.com/doi/pdf/10.1177/1729881418755245
+References for feature extraction:
+- [_A line segment extraction algorithm using laser data based on seeded region growing_](https://journals.sagepub.com/doi/pdf/10.1177/1729881418755245)
+
+References for closure loop:
+- [_A fast, complete, point cloud based loop closure for LiDAR odometry and mapping_](https://arxiv.org/pdf/1909.11811.pdf)
