@@ -27,7 +27,6 @@ function extracted_feature = extract_feature(laserscan, conf)
     %
     
     overall_seeds = [];
-    row = 1;
 
     for i = 1:Np-Pmin
 
@@ -55,10 +54,8 @@ function extracted_feature = extract_feature(laserscan, conf)
 
         if is_seed
             %% Alghoritm 2: Region growing --> it's excited here, when seed-segment detection is successful
-            [coeffs_line, Pb, Pf] = region_growing(line, i, j, Np, Pmin, Lmin, eps);
-            overall_seeds(row,1) = Pb;
-            overall_seeds(row,2) = Pf;
-            row = row + 1;
+            region_growing(line, i, j, Np, Pmin, Lmin, eps);
+            overall_seeds(end+1) = [i; j];
         end
 
         % maybe it should be added ?
@@ -67,8 +64,7 @@ function extracted_feature = extract_feature(laserscan, conf)
     end
 end
 
-% Implementation of the 2nd alghoritm: region growing
-% function that returns the parameters of a line. 
+% Implementation of the 2nd algfunction that returns the parameters of a line. 
 function [coeffs_line, Pb, Pf] = region_growing(seed_ij, i, j, Np, Pmin, Lmin, eps)
     % Initialization
     coeffs_line = seed_ij;
