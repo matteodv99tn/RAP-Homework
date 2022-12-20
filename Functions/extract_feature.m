@@ -20,31 +20,41 @@ function extracted_feature = extract_feature(laserscan, conf)
     %% Alg. 1: seed-segment detection
     % Firstly we want to generate the seeds. We increment the vector "overall_seeds" by adding the 
     % pair of starting and ending value of the seed
+
+    % Ideal seed-segment should satisfy following two requirements:
+    %   1) Distance point -> point: distance from every point in the seed-segment to its predicted position also should be less than a given threshold
+    %   2) Distance point -> line : The distance from every point in the seed-segment to the fitting straight line should be less than a given threshold
+    %
+    
     overall_seeds = [];
 
     for i = 1:Np-Pmin
 
         j       = i + Snum;
-        line    = seed(laserscan.scan[i], laserscan.scan[j]);
+        line    = seed(laserscan.scan(i), laserscan.scan(j)); % fitting line
         is_seed = true;
 
         for k = i:j
 
-            Ppred   = predicted_point(line, laserscan.Theta[k]);
-            d       = point_point_distance(laserscan.scan[k], Ppred);            
-            if d > delta 
+            Ppred   = predicted_point(line, laserscan.Theta(k));
+            d1      = point_point_distance(laserscan.scan(k), Ppred);            
+            % 1) requirement
+            if d1 > delta                                           
                 is_seed = false;
                 break;
             end
 
-            d       = line_point_distance(line, Ppred);
-            if d > eps 
+            d2      = line_point_distance(line, Ppred);
+            % 2) requirement
+            if d2 > eps 
                 is_seed = false;
                 break;
             end            
         end
 
         if is_seed
+            % Alghoritm 2 - Region growing is excited here, when seed-segment
+            % detection is successful
             overall_seeds(end+1) = [i; j];
         end
 
@@ -57,16 +67,18 @@ function extracted_feature = extract_feature(laserscan, conf)
 end
 
 
+
+
 % Given two points p1, p2 it computes the 3 coefficients of the line that joint them in the form
 %       a*x + b*y + c = 0
 % as reported in the paper; source for this formula:
 % https://math.stackexchange.com/questions/637922/how-can-i-find-coefficients-a-b-c-given-two-points
 function coeffs = seed(p1, p2)
 
-    x1  = p1[1];
-    y1  = p1[1];
-    x2  = p2[1];
-    y2  = p2[1];
+    x1  = p1(1);
+    y1  = p1(2);
+    x2  = p2(1);
+    y2  = p2(2);
 
     a   = y1 - y2;
     b   = x2 - x1;
@@ -80,9 +92,9 @@ end
 % compute predicted point; based on the paper formula
 function Ppred = predicted_point(line_coeff, theta)
 
-    a   = line_coeff[1];
-    b   = line_coeff[1];
-    c   = line_coeff[1];
+    a   = line_coeff(1);
+    b   = line_coeff(2);
+    c   = line_coeff(3);
 
     den = a*cos(theta) + b*sin(theta);
 
@@ -97,10 +109,10 @@ end
 % computes the distance between two points
 function d = point_point_distance(p1, p2)
 
-    x1  = p1[1];
-    y1  = p1[2];
-    x2  = p2[1];
-    y2  = p2[2];
+    x1  = p1(1);
+    y1  = p1(2);
+    x2  = p2(1);
+    y2  = p2(2);
 
     d   = sqrt( (x1-x2)^2 + (y1-y2)^2 );
 
@@ -110,11 +122,11 @@ end
 % computes the distance from a line and a point
 function d = line_point_distance(line_coeff, point)
 
-    a   = line_coeff[1];
-    b   = line_coeff[1];
-    c   = line_coeff[1];
-    x   = point[1];
-    y   = point[2];
+    a   = line_coeff(1);
+    b   = line_coeff(2);
+    c   = line_coeff(3);
+    x   = point(1);
+    y   = point(2);
 
     num = abs(a*x + b*y +c);
     den = sqrt(a^2 + b^2);
