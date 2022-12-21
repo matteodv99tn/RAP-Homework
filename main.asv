@@ -30,6 +30,7 @@ extracted_feature = extract_feature(laserscans{n_scan});
 
 figure(4), clf, hold on;
 plot(data(1,:), data(2,:), '.');
+
 plot([-1, 0, 1 -1], [-1, 2, -1, -1], 'r');
 plot(0, 0, 'or');
 title(['Laserscan ' num2str(n_scan) ' - time ', num2str(laserscans{n_scan}.t)]);

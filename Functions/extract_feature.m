@@ -7,15 +7,15 @@
 %                   angles of the measurement, see load_data.m);
 %   - conf:         configuration struct of the algorithm containg the parameters
 
-function extracted_feature = extract_feature(laserscan, conf)
+function extracted_feature = extract_feature(laserscan)
 
     % Copy configuration files
-    Np      = conf.Np;  
-    eps     = conf.eps;  
-    delta   = conf.delta;
-    Snum    = conf.Snum; 
-    Pmin    = conf.Pmin; 
-    Lmin    = conf.Lmin; 
+    Np      = 361;  
+    eps     = 0.03;  
+    delta   = 0.01;
+    Snum    = 6; 
+    Pmin    = 10; 
+    Lmin    = 0.5; 
 
     %% Alg. 1: seed-segment detection
     % Firstly we want to generate the seeds. We increment the vector "overall_seeds" by adding the 
@@ -32,13 +32,13 @@ function extracted_feature = extract_feature(laserscan, conf)
     for i = 1:Np-Pmin
 
         j       = i + Snum;
-        line    = seed(laserscan.scan(i), laserscan.scan(j)); % fitting line
+        line    = seed([laserscan.scan(i,1),laserscan.scan(i,2)], [laserscan.scan(j,1),laserscan.scan(j,2)]); % fitting line
         is_seed = true;
 
         for k = i:j
 
             Ppred   = predicted_point(line, laserscan.Theta(k));
-            d1      = point_point_distance(laserscan.scan(k), Ppred);            
+            d1      = point_point_distance([laserscan.scan(k,1),laserscan.scan(k,2)], Ppred);            
             % 1) requirement
             if d1 > delta                                           
                 is_seed = false;
@@ -53,7 +53,7 @@ function extracted_feature = extract_feature(laserscan, conf)
             end            
         end
 
-        if is_seed
+        if is_seed == true
             %% Alghoritm 2: Region growing --> it's excited here, when seed-segment detection is successful
             [coeffs_line, Pb, Pf] = region_growing(line, i, j, Np, Pmin, Lmin, eps);
             overall_seeds(row,1) = Pb;
@@ -63,12 +63,16 @@ function extracted_feature = extract_feature(laserscan, conf)
 
         % maybe it should be added ?
         % i = j;
-
     end
+
+    %% Alghoritm 3: Overlap region processing
+    % compute new line-segments without overlap region
+    extracted_feature = overlap_region(row,overall_seeds); 
 end
 
-% Implementation of the 2nd alghoritm: region growing
-% function that returns the parameters of a line. 
+
+%% Implementation of the 2nd alghoritm: region growing
+% function that returns the parameters of a line: coefficients, starting and ending points. 
 function [coeffs_line, Pb, Pf] = region_growing(seed_ij, i, j, Np, Pmin, Lmin, eps)
     % Initialization
     coeffs_line = seed_ij;
@@ -79,35 +83,73 @@ function [coeffs_line, Pb, Pf] = region_growing(seed_ij, i, j, Np, Pmin, Lmin, e
 
   
     % Implementation
-    dist = line_point_distance(coeffs_line,laserscan.scan(Pf));
+    dist = line_point_distance(coeffs_line,[laserscan.scan(Pf,1),laserscan.scan(Pf,2)]);
     while dist < eps
         if Pf > Np
             break;
         else
-            coeffs_line = seed(laserscan.scan(Pb),laserscan.scan(Pf));
+            coeffs_line = seed([laserscan.scan(Pb,1),laserscan.scan(Pb,2)],[laserscan.scan(Pf,1),laserscan.scan(Pf,2)]);
         end
         Pf = Pf + 1;
     end
     Pf = Pf - 1;
 
-    dist = line_point_distance(coeffs_line,laserscan.scan(Pb));
+    dist = line_point_distance(coeffs_line,[laserscan.scan(Pb,1),laserscan.scan(Pb,2)]);
     while dist < eps
         if Pb < 1
             break;
         else
-            coeffs_line = seed(laserscan.scan(Pb),laserscan.scan(Pf));
+            coeffs_line = seed([laserscan.scan(Pb,1),laserscan.scan(Pb,2)],[laserscan.scan(Pf,1),laserscan.scan(Pf,2)]);
         end
         Pb = Pb - 1;
     end
     Pb = Pb + 1;
     
-    Ll = point_point_distance(Pb,Pf);
+    Ll = point_point_distance([laserscan.scan(Pb,1),laserscan.scan(Pb,2)],[laserscan.scan(Pf,1),laserscan.scan(Pf,2)]);
     Pl = Pf - Pb;
     if Ll >= Lmin && Pl >= Pmin
-        coeffs_line = seed(laserscan.scan(Pb),laserscan.scan(Pf));
+        coeffs_line = seed([laserscan.scan(Pb,1),laserscan.scan(Pb,2)],[laserscan.scan(Pf,1),laserscan.scan(Pf,2)]);
     %else ? --> if it is not matching the requirements what we have to
     %return?
     end
+end
+
+
+%% Implementation of the 3rd alghoritm: overlap region processing
+% function returns ine segments without overlap region
+function new_lines = overlap_region(row,segments)
+    new_lines = [];
+
+    for i = 1:row-1
+        j = i + 1;
+        
+        m1 = segments(i,1);  % StartPoint Index of Line i 
+        n1 = segments(i,2);  % EndPoint Index of Line i 
+        m2 = segments(j,1);  % StartPoint Index of Line j
+        n2 = segments(j,2);  % EndPoint Index of Line j
+
+        if m2 <= n1
+            for k = m2:n1
+                Pk = [laserscan.scan(k,1),laserscan.scan(k,2)];
+                line_i = seed([laserscan.scan(m1,1),laserscan.scan(m1,2)],[laserscan.scan(n1,1),laserscan.scan(n1,2)]);
+                line_j = seed([laserscan.scan(m1,1),laserscan.scan(m1,2)],[laserscan.scan(n1,1),laserscan.scan(n1,2)]);
+                dk_i = line_point_distance(line_i, Pk);
+                dk_j = line_point_distance(line_j, Pk);
+                if dk_j < dk_i
+                    break;
+                end
+            end
+            n1 = k - 1;
+            m2 = k;
+        end
+        new_lines(i,1) = m1;
+        new_lines(i,2) = n1;
+        if i == (row-1)
+            new_lines(row,1) = m2;
+            new_lines(row,2) = n2;
+        end
+    end
+    
 end
 
 
@@ -115,7 +157,7 @@ end
 %       a*x + b*y + c = 0
 % as reported in the paper; source for this formula:
 % https://math.stackexchange.com/questions/637922/how-can-i-find-coefficients-a-b-c-given-two-points
-function coeffs = seed(p1, p2)
+function [coeffs, pb, pf] = seed(p1, p2)
 
     x1  = p1(1);
     y1  = p1(2);
@@ -127,6 +169,8 @@ function coeffs = seed(p1, p2)
     c   = x1*y2 - x2*y1;
 
     coeffs = [a, b, c];
+    pb = p1;
+    pf = p2;
 
 end
 
