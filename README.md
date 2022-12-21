@@ -30,7 +30,8 @@ In the file `load_data.m` all data are aggregated in a vector `laserscans` of ma
 ## Bibliography
 References for feature extraction:
 - [_A line segment extraction algorithm using laser data based on seeded region growing_](https://journals.sagepub.com/doi/pdf/10.1177/1729881418755245)
-- [Feature Selection Criteria for Real Time EKF-SLAM Algorithm](https://journals.sagepub.com/doi/full/10.5772/7237#alg3-7237)
+- [_Feature Selection Criteria for Real Time EKF-SLAM Algorithm_](https://journals.sagepub.com/doi/full/10.5772/7237#alg3-7237)
 
 References for closure loop:
 - [_A fast, complete, point cloud based loop closure for LiDAR odometry and mapping_](https://arxiv.org/pdf/1909.11811.pdf)
+- [_Real-Time Loop Closure in 2D LIDAR SLAM_](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/45466.pdf)
