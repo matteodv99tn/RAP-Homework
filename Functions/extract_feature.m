@@ -7,15 +7,15 @@
 %                   angles of the measurement, see load_data.m);
 %   - conf:         configuration struct of the algorithm containg the parameters
 
-function extracted_feature = extract_feature(laserscan)
+function extracted_feature = extract_feature(laserscan,conf)
 
     % Copy configuration files
-    Np      = 361;  
-    eps     = 0.03;  
-    delta   = 0.01;
-    Snum    = 6; 
-    Pmin    = 10; 
-    Lmin    = 0.5; 
+    Np      = conf.Np;  
+    eps     = conf.eps;  
+    delta   = conf.delta;
+    Snum    = conf.Snum; 
+    Pmin    = conf.Pmin; 
+    Lmin    = conf.Lmin; 
 
     %% Alg. 1: seed-segment detection
     % Firstly we want to generate the seeds. We increment the vector "overall_seeds" by adding the 

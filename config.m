@@ -21,12 +21,12 @@ lidar_N         = 361;          % number of data in each
 % Parameters for the feature extraction algorithm; naming based on the source paper:
 % https://journals.sagepub.com/doi/pdf/10.1177/1729881418755245
 
-FE_conf.Np      = lidar_N;      % number of points in each laserscan
-FE_conf.eps     = 0.03;         % threshold from point to line
-FE_conf.delta   = 0.1;          % threshold from point to point
-FE_conf.Snum    = 6;            % number of laser points in seed-segment
-FE_conf.Pmin    = 10;           % min. num. of laser points in a extracted line segment
-FE_conf.Lmin    = 0.5;          % minimum segment line length
+conf.Np      = lidar_N;      % number of points in each laserscan
+conf.eps     = 0.03;         % threshold from point to line
+conf.delta   = 0.1;          % threshold from point to point
+conf.Snum    = 6;            % number of laser points in seed-segment
+conf.Pmin    = 10;           % min. num. of laser points in a extracted line segment
+conf.Lmin    = 0.5;          % minimum segment line length
 
 
 

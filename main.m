@@ -26,7 +26,7 @@ data(2,:)   = laserscans{n_scan}.yscan(:);
 R           = [0, -1; 1, 0];
 data        = R * data;
 
-extracted_feature = extract_feature(laserscans{n_scan});
+extracted_feature = extract_feature(laserscans{n_scan},conf);
 
 figure(4), clf, hold on;
 plot(data(1,:), data(2,:), '.');

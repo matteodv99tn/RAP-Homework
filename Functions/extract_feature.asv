@@ -7,19 +7,15 @@
 %                   angles of the measurement, see load_data.m);
 %   - conf:         configuration struct of the algorithm containg the parameters
 
-function extracted_feature = extract_feature(laserscan, conf)
-FE_conf.eps     = 0.03;         % threshold from point to line
-FE_conf.delta   = 0.1;          % threshold from point to point
-FE_conf.Snum    = 6;            % number of laser points in seed-segment
-FE_conf.Pmin    = 10;           % min. num. of laser points in a extracted line segment
-FE_conf.Lmin    = 0.5;          % minimum segment line length
+function extracted_feature = extract_feature(laserscan,conf)
+
     % Copy configuration files
-    Np      = 361;  
-    eps     = 0.1;  
-    delta   = 6;
-    Snum    = conf.Snum; 
-    Pmin    = conf.Pmin; 
-    Lmin    = conf.Lmin; 
+    Np      = conf.Np;  
+    eps     = conf.eps;  
+    delta   = conf.;
+    Snum    = 6; 
+    Pmin    = 10; 
+    Lmin    = 0.5; 
 
     %% Alg. 1: seed-segment detection
     % Firstly we want to generate the seeds. We increment the vector "overall_seeds" by adding the 
@@ -57,7 +53,7 @@ FE_conf.Lmin    = 0.5;          % minimum segment line length
             end            
         end
 
-        if is_seed
+        if is_seed == true
             %% Alghoritm 2: Region growing --> it's excited here, when seed-segment detection is successful
             [coeffs_line, Pb, Pf] = region_growing(line, i, j, Np, Pmin, Lmin, eps);
             overall_seeds(row,1) = Pb;
@@ -70,7 +66,8 @@ FE_conf.Lmin    = 0.5;          % minimum segment line length
     end
 
     %% Alghoritm 3: Overlap region processing
-    extracted_feature = overlap_region(row,overall_seeds); % new line-segments without overlap region
+    % compute new line-segments without overlap region
+    extracted_feature = overlap_region(row,overall_seeds); 
 end
 
 
@@ -147,9 +144,12 @@ function new_lines = overlap_region(row,segments)
         end
         new_lines(i,1) = m1;
         new_lines(i,2) = n1;
+        if i == (row-1)
+            new_lines(row,1) = m2;
+            new_lines(row,2) = n2;
+        end
     end
-    new_lines(row,1) = m2;
-    new_lines(row,2) = n2;
+    
 end
 
 
