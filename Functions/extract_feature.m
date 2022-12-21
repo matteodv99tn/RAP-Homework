@@ -185,8 +185,8 @@ function Ppred = predicted_point(line_coeff, theta)
     den = a*cos(theta) + b*sin(theta);
 
     Ppred = [
-            - c * cos(theta) / den;
-            - c * sin(theta) / den;
+            - c * cos(theta) / den,...
+            - c * sin(theta) / den ...
         ];
 
 end

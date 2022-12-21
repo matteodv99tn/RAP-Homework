@@ -26,10 +26,14 @@ data(2,:)   = laserscans{n_scan}.yscan(:);
 R           = [0, -1; 1, 0];
 data        = R * data;
 
-extracted_feature = extract_feature(laserscans{n_scan},conf);
 
+%for i = 1:N_laserscans
+%    extracted_feature = extract_feature(laserscans{i},conf);
+% end
+extracted_feature = extract_feature(laserscans{n_scan},conf);
 figure(4), clf, hold on;
 plot(data(1,:), data(2,:), '.');
+
 plot([-1, 0, 1 -1], [-1, 2, -1, -1], 'r');
 plot(0, 0, 'or');
 title(['Laserscan ' num2str(n_scan) ' - time ', num2str(laserscans{n_scan}.t)]);
