@@ -32,13 +32,13 @@ function extracted_feature = extract_feature(laserscan,conf)
     for i = 1:Np-Pmin
 
         j       = i + Snum;
-        line    = seed([laserscan.scan(i,1),laserscan.scan(i,2)], [laserscan.scan(j,1),laserscan.scan(j,2)]); % fitting line
+        line    = seed(laserscan.scan(i,:), laserscan.scan(j,:)); % fitting line
         is_seed = true;
 
         for k = i:j
 
             Ppred   = predicted_point(line, laserscan.Theta(k));
-            d1      = point_point_distance([laserscan.scan(k,1),laserscan.scan(k,2)], Ppred);            
+            d1      = point_point_distance(laserscan.scan(k,:), Ppred);            
             % 1) requirement
             if d1 > delta                                           
                 is_seed = false;
@@ -55,10 +55,11 @@ function extracted_feature = extract_feature(laserscan,conf)
 
         if is_seed == true
             %% Alghoritm 2: Region growing --> it's excited here, when seed-segment detection is successful
-            [coeffs_line, Pb, Pf] = region_growing(line, i, j, Np, Pmin, Lmin, eps);
-            overall_seeds(row,1) = Pb;
-            overall_seeds(row,2) = Pf;
-            row = row + 1;
+            [succeeded, coeffs_line, Pb, Pf] = region_growing(line, i, j, Np, Pmin, Lmin, eps);
+            if succeeded
+                overall_seeds(end+1,:) = [Pb; Pf];
+                row = row + 1;
+            end
         end
 
         % maybe it should be added ?
@@ -67,13 +68,13 @@ function extracted_feature = extract_feature(laserscan,conf)
 
     %% Alghoritm 3: Overlap region processing
     % compute new line-segments without overlap region
-    extracted_feature = overlap_region(row,overall_seeds); 
+    extracted_feature = overlap_region(row, overall_seeds, laserscan); 
 end
 
 
 %% Implementation of the 2nd alghoritm: region growing
 % function that returns the parameters of a line: coefficients, starting and ending points. 
-function [coeffs_line, Pb, Pf] = region_growing(seed_ij, i, j, Np, Pmin, Lmin, eps)
+function [grow_succedeed, coeffs_line, Pb, Pf] = region_growing(seed_ij, i, j, Np, Pmin, Lmin, eps)
     % Initialization
     coeffs_line = seed_ij;
     Ll = 0;
@@ -81,60 +82,57 @@ function [coeffs_line, Pb, Pf] = region_growing(seed_ij, i, j, Np, Pmin, Lmin, e
     Pf = j + i;
     Pb = i - 1;
 
-  
-    % Implementation
-    dist = line_point_distance(coeffs_line,[laserscan.scan(Pf,1),laserscan.scan(Pf,2)]);
-    while dist < eps
+    while line_point_distance(coeffs_line,laserscan.scan(Pf,:)) < eps
         if Pf > Np
             break;
         else
-            coeffs_line = seed([laserscan.scan(Pb,1),laserscan.scan(Pb,2)],[laserscan.scan(Pf,1),laserscan.scan(Pf,2)]);
+            coeffs_line = seed(laserscan.scan(Pb,:),laserscan.scan(Pf,:));
         end
         Pf = Pf + 1;
     end
     Pf = Pf - 1;
 
-    dist = line_point_distance(coeffs_line,[laserscan.scan(Pb,1),laserscan.scan(Pb,2)]);
-    while dist < eps
+    while line_point_distance(coeffs_line,laserscan.scan(Pb,:)) < eps
         if Pb < 1
             break;
         else
-            coeffs_line = seed([laserscan.scan(Pb,1),laserscan.scan(Pb,2)],[laserscan.scan(Pf,1),laserscan.scan(Pf,2)]);
+            coeffs_line = seed(laserscan.scan(Pb,:),laserscan.scan(Pf,:));
         end
         Pb = Pb - 1;
     end
     Pb = Pb + 1;
     
-    Ll = point_point_distance([laserscan.scan(Pb,1),laserscan.scan(Pb,2)],[laserscan.scan(Pf,1),laserscan.scan(Pf,2)]);
+    Ll = point_point_distance(laserscan.scan(Pb,:),laserscan.scan(Pf,:));
     Pl = Pf - Pb;
     if Ll >= Lmin && Pl >= Pmin
-        coeffs_line = seed([laserscan.scan(Pb,1),laserscan.scan(Pb,2)],[laserscan.scan(Pf,1),laserscan.scan(Pf,2)]);
-    %else ? --> if it is not matching the requirements what we have to
-    %return?
+        coeffs_line = seed(laserscan.scan(Pb,:),laserscan.scan(Pf,:));
+        grow_succedeed = true;
+    else
+        grow_succedeed = false;
     end
 end
 
 
 %% Implementation of the 3rd alghoritm: overlap region processing
 % function returns ine segments without overlap region
-function new_lines = overlap_region(row,segments)
+function new_lines = overlap_region(row, segments, laserscan)
     new_lines = [];
 
     for i = 1:row-1
-        j = i + 1;
+        j   = i + 1;
         
-        m1 = segments(i,1);  % StartPoint Index of Line i 
-        n1 = segments(i,2);  % EndPoint Index of Line i 
-        m2 = segments(j,1);  % StartPoint Index of Line j
-        n2 = segments(j,2);  % EndPoint Index of Line j
+        m1  = segments(i,1);  % StartPoint Index of Line i 
+        n1  = segments(i,2);  % EndPoint Index of Line i 
+        m2  = segments(j,1);  % StartPoint Index of Line j
+        n2  = segments(j,2);  % EndPoint Index of Line j
 
         if m2 <= n1
             for k = m2:n1
-                Pk = [laserscan.scan(k,1),laserscan.scan(k,2)];
-                line_i = seed([laserscan.scan(m1,1),laserscan.scan(m1,2)],[laserscan.scan(n1,1),laserscan.scan(n1,2)]);
-                line_j = seed([laserscan.scan(m1,1),laserscan.scan(m1,2)],[laserscan.scan(n1,1),laserscan.scan(n1,2)]);
-                dk_i = line_point_distance(line_i, Pk);
-                dk_j = line_point_distance(line_j, Pk);
+                Pk      = laserscan.scan(k,:);
+                line_i  = seed(laserscan.scan(m1,:), laserscan.scan(n1,:));
+                line_j  = seed(laserscan.scan(m2,:), laserscan.scan(n2,:));
+                dk_i    = line_point_distance(line_i, Pk);
+                dk_j    = line_point_distance(line_j, Pk);
                 if dk_j < dk_i
                     break;
                 end
