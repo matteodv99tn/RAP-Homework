@@ -8,7 +8,11 @@
 %   - conf:         configuration struct of the algorithm containg the parameters
 
 function extracted_feature = extract_feature(laserscan,conf)
-
+    
+    % First we want to generate the seeds. We increment the vector "overall_seeds" by adding the 
+    % pair of starting and ending value of the seed
+    overall_seeds = [];
+    
     % Copy configuration files
     Np      = conf.Np;  
     eps     = conf.eps;  
@@ -17,64 +21,77 @@ function extracted_feature = extract_feature(laserscan,conf)
     Pmin    = conf.Pmin; 
     Lmin    = conf.Lmin; 
 
-    %% Alg. 1: seed-segment detection
-    % Firstly we want to generate the seeds. We increment the vector "overall_seeds" by adding the 
-    % pair of starting and ending value of the seed
-
+    %% Alghoritm 1: seed-segment detection
     % Ideal seed-segment should satisfy following two requirements:
     %   1) Distance point -> point: distance from every point in the seed-segment to its predicted position also should be less than a given threshold
     %   2) Distance point -> line : The distance from every point in the seed-segment to the fitting straight line should be less than a given threshold
-    %
+  
+    [is_seed, seed_ij, index_i, index_j] = seed_segment(laserscan);
     
-    overall_seeds = [];
-    row = 1;
 
-    for i = 1:Np-Pmin
+    % Now I check if seed-segment detection was successful and in this case
+    % I can continue with region growing, otherwise I exit from the
+    % function
+    if is_seed
+        %% Alghoritm 2: Region growing 
+        [succeeded, coeffs_line, Pb, Pf] = region_growing(laserscan, seed_ij, index_i, index_j, Np, Pmin, Lmin, eps);
+            
+        overall_seeds(end+1,:) = [Pb; Pf];
+    else
+        disp('In this laserscan I did not succeed in the Alghoritm 1')
+        return      
+    end
 
-        j       = i + Snum;
-        line    = seed(laserscan.scan(i,:), laserscan.scan(j,:)); % fitting line
-        is_seed = true;
+    %% Alghoritm 3: Overlap region processing
+    % compute new line-segments without overlap region
+    
+    % WHAT DO WE HAVE TO RETURN FROM ALGHORITM 3?? 2 SEGMENTS OR ONE?????
+    
+    [line_i, m1, n1, line_j, m2, n2] = overlap_region(overall_seeds, laserscan);
+    
+    extracted_feature(end+1,:) = [];
+end
 
+%% Implementation of the 1st alghoritm: Seed-segment detection
+function [flag, seed_ij, index_i, index_j] = seed_segment(laserscan)
+    flag = true;
+
+    for i = 1:(conf.Np-conf.Pmin)
+
+        j       = i + conf.Snum;
+        line = seed(laserscan.scan(i,:), laserscan.scan(j,:)); % fitting line
+        
         for k = i:j
-
+            flag = true;
             Ppred   = predicted_point(line, laserscan.Theta(k));
             d1      = point_point_distance(laserscan.scan(k,:), Ppred);            
             % 1) requirement
             if d1 > delta                                           
-                is_seed = false;
+                flag = false;
                 break;
             end
 
             d2      = line_point_distance(line, Ppred);
             % 2) requirement
             if d2 > eps 
-                is_seed = false;
+                flag = false;
                 break;
-            end            
+            end  
         end
-
-        if is_seed == true
-            %% Alghoritm 2: Region growing --> it's excited here, when seed-segment detection is successful
-            [succeeded, coeffs_line, Pb, Pf] = region_growing(line, i, j, Np, Pmin, Lmin, eps);
-            if succeeded
-                overall_seeds(end+1,:) = [Pb; Pf];
-                row = row + 1;
-            end
-        end
-
-        % maybe it should be added ?
-        % i = j;
+        
+        if flag == true
+            seed_ij = line;
+            index_i = i;
+            index_j = j;
+            return;
+        end    
     end
-
-    %% Alghoritm 3: Overlap region processing
-    % compute new line-segments without overlap region
-    extracted_feature = overlap_region(row, overall_seeds, laserscan); 
 end
 
 
 %% Implementation of the 2nd alghoritm: region growing
 % function that returns the parameters of a line: coefficients, starting and ending points. 
-function [grow_succedeed, coeffs_line, Pb, Pf] = region_growing(seed_ij, i, j, Np, Pmin, Lmin, eps)
+function [grow_succedeed, coeffs_line, Pb, Pf] = region_growing(laserscan, seed_ij, i, j, Np, Pmin, Lmin, eps)
     % Initialization
     coeffs_line = seed_ij;
     Ll = 0;
@@ -107,24 +124,26 @@ function [grow_succedeed, coeffs_line, Pb, Pf] = region_growing(seed_ij, i, j, N
     if Ll >= Lmin && Pl >= Pmin
         coeffs_line = seed(laserscan.scan(Pb,:),laserscan.scan(Pf,:));
         grow_succedeed = true;
+        return;
     else
         grow_succedeed = false;
+        return;
     end
 end
 
 
 %% Implementation of the 3rd alghoritm: overlap region processing
-% function returns ine segments without overlap region
-function new_lines = overlap_region(row, segments, laserscan)
-    new_lines = [];
+% function returns line segments without overlap region
+function [line_i, m1, n1, line_j, m2, n2] = overlap_region(overall_seeds, laserscan)
+    num_seeds = size(overall_seeds,1);
 
-    for i = 1:row-1
+    for i = 1:num_seeds-1
         j   = i + 1;
         
-        m1  = segments(i,1);  % StartPoint Index of Line i 
-        n1  = segments(i,2);  % EndPoint Index of Line i 
-        m2  = segments(j,1);  % StartPoint Index of Line j
-        n2  = segments(j,2);  % EndPoint Index of Line j
+        m1  = overall_seeds(i,1);  % StartPoint Index of Line i 
+        n1  = overall_seeds(i,2);  % EndPoint Index of Line i 
+        m2  = overall_seeds(j,1);  % StartPoint Index of Line j
+        n2  = overall_seeds(j,2);  % EndPoint Index of Line j
 
         if m2 <= n1
             for k = m2:n1
@@ -139,13 +158,11 @@ function new_lines = overlap_region(row, segments, laserscan)
             end
             n1 = k - 1;
             m2 = k;
+        else
+            break;
         end
-        new_lines(i,1) = m1;
-        new_lines(i,2) = n1;
-        if i == (row-1)
-            new_lines(row,1) = m2;
-            new_lines(row,2) = n2;
-        end
+        line_i  = seed(laserscan.scan(m1,:), laserscan.scan(n1,:));
+        line_j  = seed(laserscan.scan(m2,:), laserscan.scan(n2,:));
     end
     
 end
@@ -155,7 +172,7 @@ end
 %       a*x + b*y + c = 0
 % as reported in the paper; source for this formula:
 % https://math.stackexchange.com/questions/637922/how-can-i-find-coefficients-a-b-c-given-two-points
-function [coeffs, pb, pf] = seed(p1, p2)
+function coeffs = seed(p1, p2)
 
     x1  = p1(1);
     y1  = p1(2);
@@ -167,9 +184,6 @@ function [coeffs, pb, pf] = seed(p1, p2)
     c   = x1*y2 - x2*y1;
 
     coeffs = [a, b, c];
-    pb = p1;
-    pf = p2;
-
 end
 
 
