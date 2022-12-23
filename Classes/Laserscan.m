@@ -45,7 +45,7 @@ classdef Laserscan
                 p1 = obj.cartesian(segments(k, 1), :);
                 p2 = obj.cartesian(segments(k, 2), :);
 
-                plot([p1(1), p2(1)], [p1(2), p2(2)], '-r', 'LineWidth', 2);
+              %  plot([p1(1), p2(1)], [p1(2), p2(2)], '-r', 'LineWidth', 2);
 
             end 
 
@@ -77,7 +77,7 @@ classdef Laserscan
             while j < N
 
                 line = obj.fit_line(i, j);
-                if obj.check_line_correctness(line, i, j)
+                if obj.check_line_correctness(line, i, j,0.1)
                     seeds(end+1, :) = [i, j, line];
                     i = j - N_back;
                 else
@@ -104,58 +104,53 @@ classdef Laserscan
             end
 
             confr = (v1 * v2') / (norm(v1) * norm(v2));
-            if abs(confr) > cos(5* pi / 180) 
+            if abs(confr) > cos(15* pi / 180) 
 
                 line = obj.fit_line(seed_a(1), seed_b(2));
 
-                if obj.check_line_correctness(line, seed_a(1), seed_b(2))
+                if obj.check_line_correctness(line, seed_a(1), seed_b(2),2)
                     res_seeds = [seed_a(1), seed_b(2), line];
                 end
             end
-
+            
         end
 
-        function features_new = segment_reduction(obj, segments)
+        function features_old = segment_reduction(obj, segments)
 
             features_old = segments;
-            features_new = [];
-
-            for tt = 1:20
+            dim_now = 0;
+            dim_prev = 1;
+            for l = 1:100
                 
-                disp(['Iter ' num2str(tt), ' - Dim ', num2str(size(features_old, 1))]);
-                
+               
                 k = 1;
-                features_new  = [];
+                dim_prev = size(features_old, 1);
 
                 while k < (size(features_old, 1) - 1)
                     
                     reduced_feature = obj.join_seeds(features_old(k,:), features_old(k+1,:));
 
                     if size(reduced_feature, 1) == 1
-                        features_new(end+1, :) = reduced_feature;
-                        k = k + 2;
-                    else
-                        features_new(end+1, :) = reduced_feature(1, :);
-                        k = k + 1;
+                        features_old(k,:) = reduced_feature;
+                        features_old(k+1,:) = [];
+                        
                     end
-
-                    if k == size(features_old, 1) && size(reduced_feature, 1) == 2
-                        features_new(end+1, :) = reduced_feature(2, :);
-                    end
-
+                    k = k + 1;
                 end
+                
+                dim_now = size(features_old, 1);
 
-                features_old = features_new;
+
             end
 
         end
 
-        function is_line = check_line_correctness(obj, line, i, j)
+        function is_line = check_line_correctness(obj, line, i, j,epsilon)
 
             is_line = true;
 
             delta = 5;
-            epsilon = 0.2;
+%             epsilon = 0.4;
             theta = obj.polar(:,2);
 
             p1 = obj.cartesian(i, :);
@@ -163,7 +158,7 @@ classdef Laserscan
             
             mean_radius = mean(obj.polar([i,j], 1));
 
-            if point_point_distance(p1, p2) > 0.5 * mean_radius 
+            if point_point_distance(p1, p2) > 0.4 * mean_radius 
                 is_line = false;
                 return;
             end
