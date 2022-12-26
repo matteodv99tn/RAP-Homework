@@ -54,14 +54,20 @@ methods
         plot(obj.cartesian(:, 1), obj.cartesian(:, 2), '.k', ...
             'DisplayName', 'point cloud');
 
+        for i = 1:size(obj.features, 2)
+            feat = obj.features(i, 1:2);
+            plot(obj.cartesian(feat, 1), obj.cartesian(feat, 2), 'o--g');
+        end
+
     end
 
     % Main function that needs to be called for extracting the feature of the laserscan
     function feat = extract_feature(obj)
 
-        segments = obj.seeding();        
-        segments = obj.segment_reduction(segments);   
-        feat = segments;
+        segments        = obj.seeding();        
+        segments        = obj.segment_reduction(segments);   
+        feat            = segments;
+        obj.features    = segments;
 
     end
 
@@ -130,14 +136,14 @@ methods
     %   - it is possible to correctly fit a line with all points
     function res_seeds = join_seeds(obj, seed_a, seed_b)
 
-        alpha_critic = 5;   % [deg]
+        alpha_critic = 15;   % [deg]
 
         v1 = seed_a(3:4);   % extract the normal direction of seed_a
         v2 = seed_b(3:4);   % extract the normal direction of seed_b
 
         res_seeds = [seed_a; seed_b];       % default return value
         
-        if (seed_b(1) > seed_a(2))          % check overlap condition
+        if seed_b(1) > seed_a(2)            % check overlap condition
             return;
         end
 
@@ -194,7 +200,7 @@ methods
 
         for k = i:j % check that the distance from each point from the line is below threshold
             
-            if line_point_distance(line, k) > epsilon 
+            if obj.line_point_distance(line, k) > epsilon 
                 is_line = false;
                 return
             end
@@ -235,7 +241,7 @@ methods
 
     % overload of the line_point_distance function to work with laserscan point index
     function res = line_point_distance(obj, line, i)
-        res = line_point_distance(line, obj.cartesian(j, :));
+        res = line_point_distance(line, obj.cartesian(i, :));
     end
     
     
