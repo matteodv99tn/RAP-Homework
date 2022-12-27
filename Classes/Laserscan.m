@@ -132,7 +132,7 @@ methods
     %           a*x + b*y + c = 0
     % The seeds are merged if all the following conditions are met:
     %   - there is an overlap in the two segments;
-    %   - the relative orientation of segments is lower then a critic angle "alpha_critic";
+    %   - the relative orientation of the two segments is lower then a critic angle "alpha_critic";
     %   - it is possible to correctly fit a line with all points
     function res_seeds = join_seeds(obj, seed_a, seed_b)
 
@@ -158,27 +158,31 @@ methods
         end  
 
     end
-
+    
+    % Given a vector of segments, function tries to reduce the number of
+    % features, joining as many segments as possible in a single line
+    % Function returns the new vector of features, reduced
     function features_old = segment_reduction(obj, segments)
         features_old = segments;
         dim_now = 0;
         dim_prev = 1;
         for l = 1:100
-            
-           
             k = 1;
             dim_prev = size(features_old, 1);
             while k < (size(features_old, 1) - 1)
-                
+                % We check if we can join two consecutive segments
+                % size(reduced_feature) = 1 --> segments joint
+                % size(reduced_feature) = 2 --> we can't join the segments
+                % -> situation remains the same as before and we continue
                 reduced_feature = obj.join_seeds(features_old(k,:), features_old(k+1,:));
                 if size(reduced_feature, 1) == 1
+                    % we can reduce the vector of feature by saving in position k the new
+                    % join segments and deleting the k+1 row
                     features_old(k,:) = reduced_feature;
                     features_old(k+1,:) = [];
-                    
                 end
                 k = k + 1;
             end
-            
             dim_now = size(features_old, 1);
         end
     end
@@ -187,6 +191,10 @@ methods
     % star/end indexes i, j, it checks that:
     %   - the distance between start/end points it's not too high w.r.t. the mean polar measurement;
     %   - each point is restrained in a region of distance "epsilon" from the line
+    % epsilon is given as an input of this function because it is used in
+    % different moments of the main alghoritm --> for the first seed
+    % detenction it's necessary to use a little "epsilon", later when we need
+    % to grow the lines it's ok to use a bigger "epsilon"
     function is_line = check_line_correctness(obj, line, i, j, epsilon)
     
         is_line = true;         % by default we assume that the segment is a proper seed for the
