@@ -38,3 +38,4 @@ References for closure loop:
 
 References for EKF:
 - [_A simple and efficient implementation of EKF - based SLAM relying on laser scanner in complex indoor environment_](https://www.infona.pl/resource/bwmeta1.element.baztech-5cbd9e8d-e5b6-4200-8f35-186220453ec8/content/partContents/0331eb36-015d-38a5-a06b-9f1870722f01)
+- [_Slam with EKF, matlab code_](https://github.com/jaijuneja/ekf-slam-matlab)
