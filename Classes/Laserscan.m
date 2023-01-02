@@ -53,6 +53,9 @@ methods
 
         plot(obj.cartesian(:, 1), obj.cartesian(:, 2), '.k', ...
             'DisplayName', 'point cloud');
+        axis equal;
+        hold on;
+        grid on;
 
         for i = 1:size(obj.features, 2)
             feat = obj.features(i, 1:2);
@@ -209,6 +212,13 @@ methods
         for k = i:j % check that the distance from each point from the line is below threshold
             
             if obj.line_point_distance(line, k) > epsilon 
+                is_line = false;
+                return
+            end
+
+            P_curr = obj.cartesian(k, :);
+            P_pred = predict_point(line, obj.polar(k, 2));
+            if point_point_distance(P_curr, P_pred) > 0.12
                 is_line = false;
                 return
             end
