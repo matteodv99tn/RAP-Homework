@@ -64,7 +64,8 @@ methods
     function feat = extract_feature(obj)
 
         segments        = obj.seeding();        
-        segments        = obj.segment_reduction(segments);   
+        segments        = obj.segment_reduction(segments); 
+        segments        = obj.expand_seeds(segments);  
         feat            = segments;
         obj.features    = feat;
     end
@@ -108,7 +109,7 @@ methods
 
             line = obj.fit_line(i, j);                      % least square fitting
 
-            if obj.check_line_correctness(line, i, j, 0.03,1)  % check line
+            if obj.check_line_correctness(line, i, j, 0.05, 1)  % check line
                 seeds(end+1, :) = [i, j, line];
                 i = j - N_back;
             else
@@ -187,6 +188,45 @@ methods
         end
     end
 
+    
+    function features = expand_seeds(obj, seeds)
+
+        features = zeros(size(seeds));
+
+        for n = 1:size(features, 1) % for each feature
+
+            i = seeds(n, 1);
+            j = seeds(n, 2);
+            line = seeds(n, 3:5);   % extract the line coefficients
+            
+            while line_compliant(obj, line, i) && i > 1
+                i = i - 1;
+            end
+            i = i + 1;
+
+            while line_compliant(obj, line, j) && j < size(obj.cartesian, 1)
+                j = j + 1;
+            end
+            j = j - 1;
+
+            features(n, :) = [i, j, obj.fit_line(i, j)];
+
+        end
+
+        function is_compliant = line_compliant(obj, line, index_to_check)
+                
+            P_predicted = predict_point(line, obj.polar(index_to_check, 2))
+
+            if point_point_distance(P_predicted, obj.cartesian(index_to_check, :)) < 0.05 && ...
+               line_point_distance(line, obj.cartesian(index_to_check, :)) < 0.05
+                is_compliant = true;
+            else
+                is_compliant = false;
+            end
+        end
+
+    end
+
     % Given a line (vector of coefficients [a, b, c] for a line of the type a*x + b*y + c = 0) and 
     % star/end indexes i, j, it checks that:
     %   - the distance between start/end points it's not too high w.r.t. the mean polar measurement;
@@ -219,7 +259,7 @@ methods
 
             P_curr = obj.cartesian(k, :);
             P_pred = predict_point(line, obj.polar(k, 2));
-            if point_point_distance(P_curr, P_pred) > 0.08
+            if point_point_distance(P_curr, P_pred) > 0.09
                 is_line = false;
                 return
             end
