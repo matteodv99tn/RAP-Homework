@@ -15,7 +15,7 @@ properties
     cartesian;                  % Nx2 matrix that's the transformation in cartesian coordinates of 
                                 % the measurement; is row is of the type
                                 %       [x, y]          both values expressed in [m]
-    features = [];              
+    features;              
 end % properties
 
 %  ____        _     _ _        __  __                _                                                             
@@ -37,7 +37,8 @@ methods
         
         obj.polar       = [ to_column_vector(measures), to_column_vector(angles) ];
         obj.cartesian   = [ cos(obj.polar(:, 2)), sin(obj.polar(:, 2))] .* obj.polar(:, 1);
-                            
+        obj.features    = [];
+
         function out = to_column_vector(in) % converts any vector into a column vector
             if isrow(in)
                 out = in';
@@ -57,11 +58,6 @@ methods
         hold on;
         grid on;
 
-        for i = 1:size(obj.features, 2)
-            feat = obj.features(i, 1:2);
-            plot(obj.cartesian(feat, 1), obj.cartesian(feat, 2), 'o--g');
-        end
-
     end
 
     % Main function that needs to be called for extracting the feature of the laserscan
@@ -70,8 +66,7 @@ methods
         segments        = obj.seeding();        
         segments        = obj.segment_reduction(segments);   
         feat            = segments;
-        obj.features    = segments;
-
+        obj.features    = feat;
     end
 
 
@@ -113,7 +108,7 @@ methods
 
             line = obj.fit_line(i, j);                      % least square fitting
 
-            if obj.check_line_correctness(line, i, j, 0.1,1)  % check line
+            if obj.check_line_correctness(line, i, j, 0.03,1)  % check line
                 seeds(end+1, :) = [i, j, line];
                 i = j - N_back;
             else
@@ -156,7 +151,7 @@ methods
         end      
         
         line = obj.fit_line(seed_a(1), seed_b(2));      % check feasibility of the line
-        if obj.check_line_correctness(line, seed_a(1), seed_b(2),3,0)
+        if obj.check_line_correctness(line, seed_a(1), seed_b(2), 0.05, 0)
             res_seeds = [seed_a(1), seed_b(2), line];
         end  
 
@@ -224,7 +219,7 @@ methods
 
             P_curr = obj.cartesian(k, :);
             P_pred = predict_point(line, obj.polar(k, 2));
-            if point_point_distance(P_curr, P_pred) > 0.12
+            if point_point_distance(P_curr, P_pred) > 0.08
                 is_line = false;
                 return
             end
