@@ -110,7 +110,7 @@ methods
 
             line = obj.fit_line(i, j);                      % least square fitting
 
-            if obj.check_line_correctness(line, i, j, 0.1)  % check line
+            if obj.check_line_correctness(line, i, j, 0.1,1)  % check line
                 seeds(end+1, :) = [i, j, line];
                 i = j - N_back;
             else
@@ -143,7 +143,7 @@ methods
 
         res_seeds = [seed_a; seed_b];       % default return value
         
-        if seed_b(1) > seed_a(2)            % check overlap condition
+        if seed_b(1) > seed_a(2)            % check overlap condition: if not overlap -> return
             return;
         end
 
@@ -153,7 +153,7 @@ methods
         end      
         
         line = obj.fit_line(seed_a(1), seed_b(2));      % check feasibility of the line
-        if obj.check_line_correctness(line, seed_a(1), seed_b(2),2)
+        if obj.check_line_correctness(line, seed_a(1), seed_b(2),3,0)
             res_seeds = [seed_a(1), seed_b(2), line];
         end  
 
@@ -166,10 +166,12 @@ methods
         features_old = segments;
         dim_now = 0;
         dim_prev = 1;
-        for l = 1:100
+        iter = 0;
+        while(dim_now ~= dim_prev)
+            iter = iter + 1;
             k = 1;
             dim_prev = size(features_old, 1);
-            while k < (size(features_old, 1) - 1)
+            while k < (size(features_old, 1))
                 % We check if we can join two consecutive segments
                 % size(reduced_feature) = 1 --> segments joint
                 % size(reduced_feature) = 2 --> we can't join the segments
@@ -195,15 +197,19 @@ methods
     % different moments of the main alghoritm --> for the first seed
     % detenction it's necessary to use a little "epsilon", later when we need
     % to grow the lines it's ok to use a bigger "epsilon"
-    function is_line = check_line_correctness(obj, line, i, j, epsilon)
+    % ppdist is flag used to avoid the check on the point to point distance
+    % when the segment are joined. (A long wall may have very far points)
+    function is_line = check_line_correctness(obj, line, i, j, epsilon, ppdist)
     
         is_line = true;         % by default we assume that the segment is a proper seed for the
                                 % proposed indexes
-
+        
         mean_radius = mean(obj.polar([i,j], 1));
-        if obj.point_point_distance(i, j) > 0.4 * mean_radius 
-            is_line = false;
-            return;
+        if ppdist == 1 % check on the distant point to point only when I'm generating the seeds
+            if obj.point_point_distance(i, j) > 0.3 * mean_radius 
+                is_line = false;
+                return;
+            end
         end
 
         for k = i:j % check that the distance from each point from the line is below threshold
