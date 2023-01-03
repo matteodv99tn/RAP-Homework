@@ -1,4 +1,4 @@
-classdef Laserscan 
+classdef Laserscan < handle
 
 %     _   _   _        _ _           _            
 %    / \ | |_| |_ _ __(_) |__  _   _| |_ ___  ___ 
@@ -7,16 +7,18 @@ classdef Laserscan
 % /_/   \_\__|\__|_|  |_|_.__/ \__,_|\__\___||___/
 %                                                 
 properties 
-    polar;                      % Nx2 matrix containing, for each row, the polar coordinate of the
-                                % measure [m] and the corresponding measurement angle [rad], so in a
-                                % form 
-                                %       [r, theta]      r [m], theta [rad]
-                                % N is the number of measurement in the scan
-    cartesian;                  % Nx2 matrix that's the transformation in cartesian coordinates of 
-                                % the measurement; is row is of the type
-                                %       [x, y]          both values expressed in [m]
-    conf;                       % struct containing the configuration parameters of the algorithms
-    features;
+    polar;          % Nx2 matrix containing, for each row, the polar coordinate of the measure [m]
+                    % and the corresponding measurement angle [rad], so in a form
+                    %       [r, theta]      r [m], theta [rad]
+                    % N is the number of measurement in the scan
+    cartesian;      % Nx2 matrix that's the transformation in cartesian coordinates of the
+                    % measurement; each row is of the type
+                    %       [x, y]          x, y [m]
+    conf;           % struct containing the configuration parameters of the algorithms; see the 
+                    % class constructor for the full list of parameters
+    features;       % cell-array containing a set of Nx2 matrices, each one containing the cartesian
+                    % coordinates of the points that belong to a feature
+    features_all;   % 2xN matrix containing the cartesian coordinates of all extracted features
                 
 end % properties
 
@@ -64,7 +66,7 @@ methods
                 'N_min_check',          10 ...
             );
         
-        obj.features = [];
+        obj.features = {};
     end
 
     
@@ -77,20 +79,22 @@ methods
         hold on;
         grid on;
 
+        for i = 1:length(obj.features)
+            plot(obj.features{i}(1, :), obj.features{i}(2, :), '-^g', ...
+            'MarkerEdgeColor', '#0072BD', 'MarkerSize', 10, 'LineWidth', 2);
+        end
     end
 
 
     % Main function that needs to be called for extracting the feature of the laserscan
-    function [feat, features] = extract_feature(obj)
+    function extract_feature(obj)
 
         seeds           = obj.seeding();  
         seeds           = obj.segment_reduction(seeds); 
         seeds           = obj.expand_seeds(seeds);  
         seeds           = obj.segment_reduction(seeds); 
         seeds           = obj.remove_non_proper_seeds(seeds);
-        features        = obj.extract_feature_list(seeds);
-        feat            = seeds;
-        obj.features    = feat;
+        obj.extract_feature_list(seeds);
 
     end
 
@@ -308,12 +312,14 @@ methods
         end
     end
 
-
-    function feature_list = extract_feature_list(obj, seeds)
-
-        feature_list = [];
+    % Given the set of all generated seeds, it extract the meaningful features that are stored in
+    % the attribute "features", that's actually a cell array. Each cell is a 2xN matrix containing
+    % the sequence of features of "contiguous wall" (the ones that are sharing an edge together).
+    function extract_feature_list(obj, seeds)
 
         k = 1;
+        obj.features_all = [];
+
         while k <= size(seeds, 1)
             
             feature_seeds = seeds(k, :);
@@ -343,9 +349,9 @@ methods
                 end
             end
 
-            feature_list = [feature_list; Features(new_feature)];
+            obj.features{end+1} = new_feature;
+            obj.features_all = [obj.features_all, new_feature];
         end
-
     end
 
 
