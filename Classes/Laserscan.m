@@ -80,12 +80,13 @@ methods
 
 
     % Main function that needs to be called for extracting the feature of the laserscan
-    function feat = extract_feature(obj)
+    function [feat, features] = extract_feature(obj)
 
         seeds           = obj.seeding();        
         seeds           = obj.segment_reduction(seeds); 
         seeds           = obj.expand_seeds(seeds);  
         seeds           = obj.remove_non_proper_seeds(seeds);
+        features        = obj.extract_feature_list(seeds);
         feat            = seeds;
         obj.features    = feat;
     end
@@ -271,6 +272,8 @@ methods
             end
         end
 
+        % Then remove redundant segments; in particular we check if the current segment can be 
+        % described by the contiguous segments
         continue_reduction = true;
         while continue_reduction
             seeds = new_seeds;
@@ -285,6 +288,46 @@ methods
             new_seeds(end+1, :) = seeds(end, :);
             continue_reduction = size(seeds) == size(new_seeds);
         end
+    end
+
+
+    function feature_list = extract_feature_list(obj, seeds)
+
+        feature_list = [];
+
+        k = 1;
+        while k < size(seeds, 1)
+            
+            feature_seeds = seeds(k, :);
+            k = k + 1;
+
+            while k < size(seeds, 1) && ...
+                    (seeds(k, 1) - feature_seeds(end, 2)) <= 0 
+                feature_seeds = [feature_seeds; seeds(k, :)];
+                k = k + 1;
+            end
+
+            new_feature = zeros(2, size(feature_seeds, 1)+1);
+            line = feature_seeds(1, 3:5);
+            start_index = feature_seeds(1, 1);  
+            new_feature(:, 1) = obj.predict_point(line, start_index);
+            line = feature_seeds(end, 3:5);
+            end_index = feature_seeds(end, 2);
+            new_feature(:, end) = obj.predict_point(line, end_index);
+
+            for n = 1:(size(feature_seeds, 1)-1)
+                line1 = feature_seeds(n, 3:5);
+                line2 = feature_seeds(n+1, 3:5);
+                new_feature(:, n+1) = line_line_intersection(line1, line2);
+
+                if new_feature(:, n+1) == [0; 0]
+                    disp('WARNING -> Parallel lines');
+                end
+            end
+
+            feature_list = [feature_list; Features(new_feature)];
+        end
+
     end
 
 
