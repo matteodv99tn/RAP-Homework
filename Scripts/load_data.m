@@ -24,8 +24,10 @@ end
 
 %% Organise data in cell arrays
 laserscans  = cell(1, N_laserscans);            % cell-array with all LIDAR scans and other data
+odometries  = cell(1, N_laserscans);            % cell-array with all LIDAR scans and other data
 half_fov    = lidar_fov / 2;
-angles      = linspace(-half_fov, half_fov, lidar_N);   % LIDAR angles
+angles      = linspace(-half_fov, half_fov, lidar_N) * pi / 180;   % LIDAR angles
+times       = zeros(1, N_laserscans);           % time of each scan
 
 x           = 0;                                % absolute odometry coordinate value
 y           = 0;                                % absolute odometry coordinate value
@@ -37,23 +39,16 @@ dt_odometry  = mean(odometry_times(2:end)  - odometry_times(1:end-1) );
 dt           = mean([dt_laserscan, dt_odometry]);
 
 for i = 1:N_laserscans 
-    
-    laserscans{i}.r     = laserscan_data(i,:)';                     % copy polar coordinate measure
-    laserscans{i}.xscan = cos(angles*pi/180) .* laserscan_data(i,:);% laserscan in cartesian coords.
-    laserscans{i}.yscan = sin(angles*pi/180) .* laserscan_data(i,:);% laserscan in cartesian coords.
-    laserscans{i}.scan  = [laserscans{i}.xscan', laserscans{i}.yscan']; % combine cartesian measurements
-    laserscans{i}.Theta = angles;                                   % lidar's angles
-    laserscans{i}.t_odo = odometry_times(i);                        % set true laserscan time
-    laserscans{i}.t_lid = laserscan_times(i);                       % set true odometry time
-    laserscans{i}.t     = (i-1) * dt;                               % quantized time
-    laserscans{i}.x     = x;                                        % save abs. odometry
-    laserscans{i}.y     = y;                                        % save abs. odometry
-    laserscans{i}.theta = theta;                                    % save abs. odometry
-    
-    x                   = cos(theta)*x + odometry_data(i,1);        % update odometry
-    y                   = sin(theta)*y + odometry_data(i,2);        % update odometry
-    theta               = theta        + odometry_data(i,3);        % update odometry
+
+
+    laserscans{i}       = Laserscan(laserscan_data(i, :), angles);  % create laserscan object
+    odometries{i}.t     = (i-1) * dt;                               % quantized time
+    odometries{i}.x     = odometry_data(i, 1);                      % save abs. odometry
+    odometries{i}.y     = odometry_data(i, 2);                      % save abs. odometry
+    odometries{i}.theta = odometry_data(i, 3);                      % save abs. odometry
+    times(i)            = (i-1) * dt;                               % quantized time
 
 end
 
-clearvars x y theta angles i dt_laserscan dt_odometry
+clearvars x y theta angles i dt_laserscan dt_odometry laserscan_data odometry_data lidar_fov
+clearvars laserscan_times odometry_times half_fov lidar_N N_laserscans N_odometry

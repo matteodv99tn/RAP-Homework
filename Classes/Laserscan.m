@@ -76,6 +76,8 @@ methods
         plot(obj.cartesian(:, 1), obj.cartesian(:, 2), '.k', ...
             'DisplayName', 'point cloud');
         axis equal;
+        xlim([-1, 16]);
+        ylim([-11, 11]);
         hold on;
         grid on;
 
