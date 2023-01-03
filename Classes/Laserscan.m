@@ -57,8 +57,10 @@ methods
             'epsilon_reduction',    0.1, ...
             'delta_reduction',      0.1, ...
             'epsilon_expansion',    0.06, ...
-            'delta_expansion',      0.06, ...
-            'alpha_critic',         5 ...    
+            'delta_expansion',      0.1, ...
+            'alpha_critic',         5, ...    
+            'L_min',                0.5, ...
+            'N_min_check',          10 ...
         );
         
         obj.features = [];
@@ -76,13 +78,15 @@ methods
 
     end
 
+
     % Main function that needs to be called for extracting the feature of the laserscan
     function feat = extract_feature(obj)
 
-        segments        = obj.seeding();        
-        segments        = obj.segment_reduction(segments); 
-        segments        = obj.expand_seeds(segments);  
-        feat            = segments;
+        seeds           = obj.seeding();        
+        seeds           = obj.segment_reduction(seeds); 
+        seeds           = obj.expand_seeds(seeds);  
+        seeds           = obj.remove_non_proper_seeds(seeds);
+        feat            = seeds;
         obj.features    = feat;
     end
 
@@ -252,6 +256,37 @@ methods
 
         end
     end
+
+
+    function new_seeds = remove_non_proper_seeds(obj, seeds)
+
+        new_seeds = [];
+
+        % First check that each segment has a minimum length and a minimum number of points
+        for i = 1:size(seeds, 1)
+            
+            if obj.point_point_distance(seeds(i, 1), seeds(i, 2)) > obj.conf.L_min && ...
+                (seeds(i, 2) - seeds(i, 1)) >= obj.conf.N_min_check
+                new_seeds = [new_seeds; seeds(i, :)];
+            end
+        end
+
+        continue_reduction = true;
+        while continue_reduction
+            seeds = new_seeds;
+            new_seeds = seeds(1, :);
+
+            for k = 2:(size(seeds, 1)-1)
+                if seeds(k-1, 2) < seeds(k+1, 1)
+                    new_seeds(end+1, :) = seeds(k, :);
+                end
+            end
+
+            new_seeds(end+1, :) = seeds(end, :);
+            continue_reduction = size(seeds) == size(new_seeds);
+        end
+    end
+
 
     % Given a line (vector of coefficients [a, b, c] for a line of the type a*x + b*y + c = 0) and 
     % star/end indexes i, j, it checks that:
