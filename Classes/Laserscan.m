@@ -15,7 +15,8 @@ properties
     cartesian;                  % Nx2 matrix that's the transformation in cartesian coordinates of 
                                 % the measurement; is row is of the type
                                 %       [x, y]          both values expressed in [m]
-    features;              
+    features;
+    conf;              
 end % properties
 
 %  ____        _     _ _        __  __                _                                                             
@@ -46,6 +47,21 @@ methods
                 out = in;
             end
         end
+
+        % initialize a struct containing the configuration parameters
+        obj.conf = struct( ...
+            'N_min',                8, ...          
+            'N_back',               2, ...
+            'epsilon_seeding',      0.05, ...
+            'delta_seeding',        0.05, ...
+            'epsilon_reduction',    0.1, ...
+            'delta_reduction',      0.1, ...
+            'epsilon_expansion',    0.06, ...
+            'delta_expansion',      0.06, ...
+            'alpha_critic',         5 ...    
+        );
+        
+        obj.features = [];
     end
 
     
@@ -96,8 +112,8 @@ methods
     function seeds = seeding(obj)
         
         % Parameters initialization
-        N_min   = 8;
-        N_back  = 2;
+        N_min   = obj.conf.N_min;
+        N_back  = obj.conf.N_back;
 
         seeds   = [];   
         N       = size(obj.cartesian, 1);
@@ -109,7 +125,9 @@ methods
 
             line = obj.fit_line(i, j);                      % least square fitting
 
-            if obj.check_line_correctness(line, i, j, 0.05, 1)  % check line
+            if obj.check_line_correctness(line, i, j, ... 
+                                          obj.conf.epsilon_seeding, ...
+                                          obj.conf.delta_seeding )  % check line
                 seeds(end+1, :) = [i, j, line];
                 i = j - N_back;
             else
@@ -135,7 +153,7 @@ methods
     %   - it is possible to correctly fit a line with all points
     function res_seeds = join_seeds(obj, seed_a, seed_b)
 
-        alpha_critic = 15;   % [deg]
+        alpha_critic = obj.conf.alpha_critic;   % [deg]
 
         v1 = seed_a(3:4);   % extract the normal direction of seed_a
         v2 = seed_b(3:4);   % extract the normal direction of seed_b
@@ -152,7 +170,9 @@ methods
         end      
         
         line = obj.fit_line(seed_a(1), seed_b(2));      % check feasibility of the line
-        if obj.check_line_correctness(line, seed_a(1), seed_b(2), 0.05, 0)
+        if obj.check_line_correctness(line, seed_a(1), seed_b(2), ... 
+                                      obj.conf.epsilon_reduction, ... 
+                                      obj.conf.delta_reduction)
             res_seeds = [seed_a(1), seed_b(2), line];
         end  
 
@@ -189,6 +209,9 @@ methods
     end
 
     
+    % Given a vector of seed segments, the function tries to expand them. In particular it expands
+    % the segments in both directions until the common distances point-line and predicted-measures 
+    % points hold. Once the new start/end indexes are found, the seeds are re-fitted and returned.
     function features = expand_seeds(obj, seeds)
 
         features = zeros(size(seeds));
@@ -199,32 +222,35 @@ methods
             j = seeds(n, 2);
             line = seeds(n, 3:5);   % extract the line coefficients
             
-            while line_compliant(obj, line, i) && i > 1
+            while obj.point_in_line(i, line, ...
+                                    obj.conf.epsilon_expansion, ...
+                                    obj.conf.delta_expansion) ...
+                    && i > 1
                 i = i - 1;
             end
             i = i + 1;
+            if n == 1 && obj.point_in_line(1, line, ...
+                                           obj.conf.epsilon_expansion, ...
+                                           obj.conf.delta_expansion) ...
+                i = 1;
+            end
 
-            while line_compliant(obj, line, j) && j < size(obj.cartesian, 1)
+            while obj.point_in_line(j, line, ...
+                                    obj.conf.epsilon_expansion, ...
+                                    obj.conf.delta_expansion) ...
+                    && j < size(obj.cartesian, 1)
                 j = j + 1;
             end
             j = j - 1;
+            if n == size(features, 1) && obj.point_in_line(size(obj.cartesian, 1), line, ...
+                                                           obj.conf.epsilon_expansion, ...
+                                                           obj.conf.delta_expansion) ...
+                j = size(obj.cartesian, 1);
+            end
 
             features(n, :) = [i, j, obj.fit_line(i, j)];
 
         end
-
-        function is_compliant = line_compliant(obj, line, index_to_check)
-                
-            P_predicted = predict_point(line, obj.polar(index_to_check, 2))
-
-            if point_point_distance(P_predicted, obj.cartesian(index_to_check, :)) < 0.05 && ...
-               line_point_distance(line, obj.cartesian(index_to_check, :)) < 0.05
-                is_compliant = true;
-            else
-                is_compliant = false;
-            end
-        end
-
     end
 
     % Given a line (vector of coefficients [a, b, c] for a line of the type a*x + b*y + c = 0) and 
@@ -237,34 +263,52 @@ methods
     % to grow the lines it's ok to use a bigger "epsilon"
     % ppdist is flag used to avoid the check on the point to point distance
     % when the segment are joined. (A long wall may have very far points)
-    function is_line = check_line_correctness(obj, line, i, j, epsilon, ppdist)
+    function is_line = check_line_correctness(obj, line, i, j, epsilon, delta)
     
         is_line = true;         % by default we assume that the segment is a proper seed for the
                                 % proposed indexes
         
-        mean_radius = mean(obj.polar([i,j], 1));
-        if ppdist == 1 % check on the distant point to point only when I'm generating the seeds
-            if obj.point_point_distance(i, j) > 0.3 * mean_radius 
+        % mean_radius = mean(obj.polar([i,j], 1));
+        % if ppdist == 1 % check on the distant point to point only when I'm generating the seeds
+        %     if obj.point_point_distance(i, j) > 0.3 * mean_radius 
+        %         is_line = false;
+        %         return;
+        %     end
+        % end
+
+        for k = i:j % check that each point is compatible with the given line distribution
+            
+            if obj.point_in_line(k, line, epsilon, delta) == false
                 is_line = false;
                 return;
             end
         end
+    end
 
-        for k = i:j % check that the distance from each point from the line is below threshold
-            
-            if obj.line_point_distance(line, k) > epsilon 
-                is_line = false;
-                return
-            end
 
-            P_curr = obj.cartesian(k, :);
-            P_pred = predict_point(line, obj.polar(k, 2));
-            if point_point_distance(P_curr, P_pred) > 0.09
-                is_line = false;
-                return
-            end
+    % Checks if a point is compatible with a line distribution; in particular, it checks that:
+    %   - the distance between the point and the line is below a threshold "epsilon";
+    %   - the distance between the point and the projection on the line obtained by the same angle of
+    %     measurement is below a threshold "delta".
+    % Inputs are
+    %   - obj:      the object itself;
+    %   - k:        index of the point to check;
+    %   - line:     set of coefficients [a, b, c] of the line parametrize as a*x + b*y + c = 0; 
+    %   - epsilon:  threshold for the distance between the point and the line;
+    %   - delta:    threshold for the distance between the point and the projection on the line.
+    function is_in_line = point_in_line(obj, k, line, epsilon, delta)
+
+        P_meas = obj.cartesian(k, :);
+        P_pred = predict_point(line, obj.polar(k, 2));
+
+        if point_point_distance(P_meas, P_pred) < delta && ...
+           line_point_distance(line, P_meas) < epsilon
+            is_in_line = true;
+        else
+            is_in_line = false;
         end
     end
+
 
     % Given start (i) and endpoint index (j), it computes the parameters [a, b, c] of the line in 
     % the form
