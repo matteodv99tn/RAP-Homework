@@ -26,6 +26,10 @@ In the file `load_data.m` all data are aggregated in a vector `laserscans` of ma
 - `t`: a newly define time based on the average sampling time; the first measurement starts at `t=1`;
 - `x, y, theta`: the current absolute values of the robot provided by the odometry.
 
+## Classes
+Avaliable classes:
+
+- [Laserscan](Classes/Laserscan.m): handle everything about the laserscan; in particular it stores the polar information of the scan and translates them in cartesian coordinates. It embeds also a function that allows to extract features from the laserscan.
 
 ## Bibliography
 References for feature extraction:

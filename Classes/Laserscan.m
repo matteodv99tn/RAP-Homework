@@ -10,13 +10,14 @@ properties
     polar;                      % Nx2 matrix containing, for each row, the polar coordinate of the
                                 % measure [m] and the corresponding measurement angle [rad], so in a
                                 % form 
-                                %       [r, theta]
+                                %       [r, theta]      r [m], theta [rad]
                                 % N is the number of measurement in the scan
     cartesian;                  % Nx2 matrix that's the transformation in cartesian coordinates of 
                                 % the measurement; is row is of the type
                                 %       [x, y]          both values expressed in [m]
+    conf;                       % struct containing the configuration parameters of the algorithms
     features;
-    conf;              
+                
 end % properties
 
 %  ____        _     _ _        __  __                _                                                             
@@ -48,20 +49,20 @@ methods
             end
         end
 
-        % initialize a struct containing the configuration parameters
+        % struct containing the configuration parameters
         obj.conf = struct( ...
-            'N_min',                8, ...          
-            'N_back',               2, ...
-            'epsilon_seeding',      0.05, ...
-            'delta_seeding',        0.05, ...
-            'epsilon_reduction',    0.1, ...
-            'delta_reduction',      0.1, ...
-            'epsilon_expansion',    0.06, ...
-            'delta_expansion',      0.1, ...
-            'alpha_critic',         5, ...    
-            'L_min',                0.5, ...
-            'N_min_check',          10 ...
-        );
+                'N_min',                8, ...          
+                'N_back',               2, ...
+                'epsilon_seeding',      0.05, ...
+                'delta_seeding',        0.05, ...
+                'epsilon_reduction',    0.1, ...
+                'delta_reduction',      0.1, ...
+                'epsilon_expansion',    0.06, ...
+                'delta_expansion',      0.1, ...
+                'alpha_critic',         5, ...    
+                'L_min',                0.5, ...
+                'N_min_check',          10 ...
+            );
         
         obj.features = [];
     end
@@ -90,6 +91,7 @@ methods
         features        = obj.extract_feature_list(seeds);
         feat            = seeds;
         obj.features    = feat;
+
     end
 
 
@@ -129,7 +131,7 @@ methods
 
         while j < N
 
-            line = obj.fit_line(i, j);                      % least square fitting
+            line = obj.fit_line(i, j);                     
 
             if obj.check_line_correctness(line, i, j, ... 
                                           obj.conf.epsilon_seeding, ...
@@ -228,6 +230,7 @@ methods
             j = seeds(n, 2);
             line = seeds(n, 3:5);   % extract the line coefficients
             
+            % check if starting index can be expanded "to the left"
             while obj.point_in_line(i, line, ...
                                     obj.conf.epsilon_expansion, ...
                                     obj.conf.delta_expansion) ...
@@ -235,31 +238,45 @@ methods
                 i = i - 1;
             end
             i = i + 1;
+
+            % deal with the particular case of first feature and first measured point
             if n == 1 && obj.point_in_line(1, line, ...
                                            obj.conf.epsilon_expansion, ...
                                            obj.conf.delta_expansion) ...
                 i = 1;
             end
 
+            % check if ending index can be expanded "to the right"
             while obj.point_in_line(j, line, ...
                                     obj.conf.epsilon_expansion, ...
                                     obj.conf.delta_expansion) ...
                     && j < size(obj.cartesian, 1)
                 j = j + 1;
             end
+            
             j = j - 1;
+            
+            % deal with the particular case of last feature and last measured point
             if n == size(features, 1) && obj.point_in_line(size(obj.cartesian, 1), line, ...
                                                            obj.conf.epsilon_expansion, ...
                                                            obj.conf.delta_expansion) ...
                 j = size(obj.cartesian, 1);
             end
 
+            % create new feature by re-fitting the line on the newly computed indexes
+            % at worst the line is the same as before
             features(n, :) = [i, j, obj.fit_line(i, j)];
 
         end
     end
 
-
+    % Given a vector of seeds, the function tries to remove the non-proper ones. Two main tests are
+    % performed:
+    %   1)  each segment must have a minimum length and a minimum number of points;
+    %   2)  we have to remove "redundant segments".
+    % The latter deals with some issues with undesired seeds around corners. Given a seed, if we 
+    % observe that the two neighbouring seeds present overlapping regions, than the current seed
+    % is completely useless, thus it can be removed.
     function new_seeds = remove_non_proper_seeds(obj, seeds)
 
         new_seeds = [];
@@ -334,26 +351,17 @@ methods
 
     % Given a line (vector of coefficients [a, b, c] for a line of the type a*x + b*y + c = 0) and 
     % star/end indexes i, j, it checks that:
-    %   - the distance between start/end points it's not too high w.r.t. the mean polar measurement;
     %   - each point is restrained in a region of distance "epsilon" from the line
-    % epsilon is given as an input of this function because it is used in
-    % different moments of the main alghoritm --> for the first seed
-    % detenction it's necessary to use a little "epsilon", later when we need
-    % to grow the lines it's ok to use a bigger "epsilon"
-    % ppdist is flag used to avoid the check on the point to point distance
-    % when the segment are joined. (A long wall may have very far points)
+    %   - the distance between predicted and measured point is less than "delta";
+    % In particular the predicted point is the one that lies on the line and is obtained by the it's
+    % intersection with the direction of the corresponding polar angle of the lidar; algorithm based
+    % on the paper
+    % The values of epsilon and delta are parameters as are chosen adaptively based on the stage of
+    % the algorithm.
     function is_line = check_line_correctness(obj, line, i, j, epsilon, delta)
     
         is_line = true;         % by default we assume that the segment is a proper seed for the
                                 % proposed indexes
-        
-        % mean_radius = mean(obj.polar([i,j], 1));
-        % if ppdist == 1 % check on the distant point to point only when I'm generating the seeds
-        %     if obj.point_point_distance(i, j) > 0.3 * mean_radius 
-        %         is_line = false;
-        %         return;
-        %     end
-        % end
 
         for k = i:j % check that each point is compatible with the given line distribution
             
