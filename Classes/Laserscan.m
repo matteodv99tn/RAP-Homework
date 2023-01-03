@@ -82,9 +82,10 @@ methods
     % Main function that needs to be called for extracting the feature of the laserscan
     function [feat, features] = extract_feature(obj)
 
-        seeds           = obj.seeding();        
+        seeds           = obj.seeding();  
         seeds           = obj.segment_reduction(seeds); 
         seeds           = obj.expand_seeds(seeds);  
+        seeds           = obj.segment_reduction(seeds); 
         seeds           = obj.remove_non_proper_seeds(seeds);
         features        = obj.extract_feature_list(seeds);
         feat            = seeds;
@@ -286,7 +287,7 @@ methods
             end
 
             new_seeds(end+1, :) = seeds(end, :);
-            continue_reduction = size(seeds) == size(new_seeds);
+            continue_reduction = (size(seeds) ~= size(new_seeds));
         end
     end
 
@@ -296,12 +297,12 @@ methods
         feature_list = [];
 
         k = 1;
-        while k < size(seeds, 1)
+        while k <= size(seeds, 1)
             
             feature_seeds = seeds(k, :);
             k = k + 1;
 
-            while k < size(seeds, 1) && ...
+            while k <= size(seeds, 1) && ...
                     (seeds(k, 1) - feature_seeds(end, 2)) <= 0 
                 feature_seeds = [feature_seeds; seeds(k, :)];
                 k = k + 1;
