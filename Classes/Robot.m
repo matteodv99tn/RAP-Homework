@@ -42,30 +42,29 @@ methods
     % the transformation with respect to the states.
 
 
-    function [X_next, jac] = update_states(obj, X_curr) 
+    function jac_x = JF_x(obj) 
 
-        theta  = X_curr(3);
-        jac    = [ cos(theta), -sin(theta), 0; ...
+        theta  = x(3);
+        jac_x    = [ cos(theta), -sin(theta), 0; ...
                    sin(theta),  cos(theta), 0; ...
                    0,           0,          1  ];
-        X_next = X_curr + jac*obj.dX;
-
     end
 
+    function jac_n = JF_n(obj) 
 
-    function robot_motion(obj, odometry)
-        
+        theta  = x(3);
+        jac_n    = [ cos(theta), -sin(theta), 0; ...
+                   sin(theta),  cos(theta), 0; ...
+                   0,           0,          1  ];
+    end
+   
         
 
     
-    function update_step(obj, odometry)
+    function next_state = update_step(obj, odometry)
 
-        next_state, jac_X = odometry.update_states(obj.x);
-        P = obj.P;
-
+        next_state = obj.x + JF_x()*odometry.dX;
         obj.x = next_state;
-        obj.P = jac_X * P * jac_X' + odometry.Q;
-
     end
     
 
