@@ -34,10 +34,43 @@ load_precomputed_data = true;
 ```
 is defined. If the flag is set to true, then it firstly tries to load (if available) data from the `ProcessedData` folder, otherwise it computes them from scratch. If the flag is set to false, the algorithm will always re-compute everything at each run.
 
-## Classes
-Avaliable classes:
+# Classes
+Different classes are developed to get different levels of abstraction of informations. [Naming and ideas mainly obtained by this article (also cited in the references).](https://www.iri.upc.edu/people/jsola/JoanSola/objectes/curs_SLAM/SLAM2D/SLAM%20course.pdf)
 
-- [Laserscan](Classes/Laserscan.m): handle everything about the laserscan; in particular it stores the polar information of the scan and translates them in cartesian coordinates. It embeds also a function that allows to extract features from the laserscan.
+
+### [Laserscan](Classes/Laserscan.m)
+Handles information of a laserscan. It takes as input a the polar measurement and is able to convert them in cartesian space. 
+
+Has an algorithm to extract feature from the cartesian map.
+
+**TODO**: create function that given the robot state from which the map has been taken from, it computes the absolute position of each computed feature and it's jacobian (both in local, w.r.t the robot, reference frame and ground, w.r.t the map origin).
+
+
+### [Odometry](Classes/Odometry.m)
+Stores information of the odometry system on the robot.
+
+**TODO**: given the absolute current state of the robot, provide the state update of the Kalman filter.
+
+
+### [Robot](Classes/Robot.m)
+Stores current information of the robot, in particular it's state estimate and covariance matrix.
+
+**TODO**: must create functions to abstract the interaction with the Odometry and Laserscan classes.
+
+
+### [Observation](Classes/Observation.m)
+Observation information: **should we use this clas???**
+
+Maybe can be regarded as the fusion of information coming from the robot (it's state estimate) and the laserscan (features) in order to compute landmarks w.r.t. ground and the associated different relevant Jacobians.
+
+
+### [Landmark](Classes/Landmark.m)
+Contains information (absolute position and covariance matrix) of a landmark inside a map.
+
+
+### [Map](Classes/Map.m)
+Handles everything about the map (landmarks and robot moving inside the map).
+
 
 ## Bibliography
 References for feature extraction:
