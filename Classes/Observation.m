@@ -8,9 +8,8 @@ classdef Observation < handle
 %                                                 
 properties 
 
-    z;
-    R;
-    landmark; % 2x1 vector describing the landmark in the map reference frame
+    z;  % measurement
+    R;  % covariance matrix of the measurement
 
 end % properties
 
@@ -24,25 +23,21 @@ end % properties
 % here we firstly define the functions that are intended to be called in the main program                                                                                                                   
 methods 
 
-    % A observation is a pair of robot and landmark (defined in robot reference frame). The goal of 
-    % the constructor is to transform the landmark in the map reference system fusing the two 
-    % information. Note that
-    %   - robot is a Robot object;
-    %   - landmark is 2x1 vector describing a feature in the robot reference frame.
-    % To perform the transformation we build an homogeneous transformation matrix
-    function obj = Observation(robot, landmark) % constructor
+    function obj = Observation(landmark) % constructor
 
-        landmark_augmented = [to_column_vector(landmark); 1];
+        obj.z   = to_column_vector(landmark);
 
-        x     = robot.x;
-        y     = robot.y;
-        theta = robot.theta;
-        H     = [ cos(theta), -sin(theta), x; ...
-                  sin(theta),  cos(theta), y; ...
-                  0,           0,          1];
-          
-        observation_augmented = H * landmark_augmented;
-        obj.landmark          = observation_augmented(1:2);
+        % Conversion to polar coordinates
+        r       = norm(obj.z);
+        theta   = atan2(obj.z(2), obj.z(1));
+        
+        % Jacobian of the transformation
+        jac     = [ cos(theta) -r*sin(theta); ...
+                    sin(theta) r*cos(theta)];
+        
+        % Uncertainties
+        Q       = 1e-4 * eye(2);    % uncertainty in polar coordinates
+        obj.R   = jac * Q * jac';   % transformation to cartesian coordinates
 
     end
     

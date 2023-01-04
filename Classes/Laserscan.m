@@ -19,6 +19,7 @@ properties
     features;       % cell-array containing a set of Nx2 matrices, each one containing the cartesian
                     % coordinates of the points that belong to a feature
     features_all;   % 2xN matrix containing the cartesian coordinates of all extracted features
+    observations;   % cell-array containing the set of Observation objects
                 
 end % properties
 
@@ -81,7 +82,7 @@ methods
 
 
     % Main function that needs to be called for extracting the feature of the laserscan
-    function extract_feature(obj)
+    function observations = extract_feature(obj)
 
         seeds           = obj.seeding();  
         seeds           = obj.segment_reduction(seeds); 
@@ -89,9 +90,15 @@ methods
         seeds           = obj.segment_reduction(seeds); 
         seeds           = obj.remove_non_proper_seeds(seeds);
         obj.extract_feature_list(seeds);
+        observations    = obj.generate_observations();
 
     end
 
+
+    % Returns the cell-array of computed observations
+    function obs = get_observations(obj)
+        obs = obj.observations;
+    end
 
 %  ____       _            _         __  __                _                   
 % |  _ \ _ __(_)_   ____ _| |_ ___  |  \/  | ___ _ __ ___ | |__   ___ _ __ ___ 
@@ -348,6 +355,16 @@ methods
         end
     end
 
+
+    % Generate a cell-array of all the observed features in the laserscan
+    function observations = generate_observations(obj)
+
+        observations = cell(1, size(obj.features_all, 2));
+        for i = 1:size(obj.feature_all, 2)
+            observations{i} = Observation(obj.features_all(:, i));
+        end
+        obj.observations = observations;
+    end
 
     % Given a line (vector of coefficients [a, b, c] for a line of the type a*x + b*y + c = 0) and 
     % star/end indexes i, j, it checks that:
