@@ -1,4 +1,4 @@
-classdef Features 
+classdef BaseClass < handle 
 
 %     _   _   _        _ _           _            
 %    / \ | |_| |_ _ __(_) |__  _   _| |_ ___  ___ 
