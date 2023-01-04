@@ -6,8 +6,10 @@ classdef Robot < handle
 %  / ___ \ |_| |_| |  | | |_) | |_| | ||  __/\__ \
 % /_/   \_\__|\__|_|  |_|_.__/ \__,_|\__\___||___/
 %                                                 
-properties 
-                 
+properties
+    x;          % current estimated position of the robot. Is a 3x1 vector of the form
+                %       [x; y; theta]       x, y [m], theta [rad]
+    P;          % 3x3 covariance matrix of the robot position estimate.
 end % properties
 
 %  ____        _     _ _        __  __                _                                                             
@@ -21,6 +23,8 @@ end % properties
 methods 
 
     function obj = Robot() % constructor
+        x = zeros(3, 1);
+        P = zeros(3, 3);
     end
     
 
