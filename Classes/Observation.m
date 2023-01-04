@@ -8,6 +8,8 @@ classdef Observation < handle
 %                                                 
 properties 
 
+    z;
+    R;
     landmark; % 2x1 vector describing the landmark in the map reference frame
 
 end % properties
