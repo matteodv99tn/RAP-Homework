@@ -7,6 +7,9 @@ classdef Landmark < handle
 % /_/   \_\__|\__|_|  |_|_.__/ \__,_|\__\___||___/
 %                                                 
 properties 
+
+    x;  % state estimate of the landmark (2x1 vector)
+    P;  % related covariance (2x2 matrix)
                  
 end % properties
 

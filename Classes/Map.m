@@ -7,6 +7,9 @@ classdef Map < handle
 % /_/   \_\__|\__|_|  |_|_.__/ \__,_|\__\___||___/
 %                                                 
 properties 
+
+    landmark_vector;
+    laserscan_buffer;
                  
 end % properties
 
@@ -22,7 +25,34 @@ methods
 
     function obj = Map() % constructor
     end
+
+    % Combination of all information
+    function [z, H_x, R] = compute_innovation(obj, robot, observation_vector)
+
+        P1, P2 = obj.compute_permutations(robot, observation_vector)
+
+        %% TODO
+
+    end
+
     
+    function [P1, P2] = compute_permutations(obj, robot, observation_vector)
+        
+        %% TODO
+
+    end
+
+
+    % Update
+    function update_map(map, new_laserscan)
+        %% TODO
+
+    end
+
+    function loop_closure(map, observation_vector)
+        %% TODO
+
+    end
 
 %  ____       _            _         __  __                _                   
 % |  _ \ _ __(_)_   ____ _| |_ ___  |  \/  | ___ _ __ ___ | |__   ___ _ __ ___ 

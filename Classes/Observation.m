@@ -32,8 +32,8 @@ methods
         theta   = atan2(obj.z(2), obj.z(1));
         
         % Jacobian of the transformation
-        jac     = [ cos(theta) -r*sin(theta); ...
-                    sin(theta) r*cos(theta)];
+        jac     = [ cos(theta), -r*sin(theta); ...
+                    sin(theta), r*cos(theta)];
         
         % Uncertainties
         Q       = 1e-4 * eye(2);    % uncertainty in polar coordinates

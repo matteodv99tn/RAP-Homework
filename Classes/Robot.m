@@ -1,5 +1,6 @@
 classdef Robot < handle 
 
+
 %     _   _   _        _ _           _            
 %    / \ | |_| |_ _ __(_) |__  _   _| |_ ___  ___ 
 %   / _ \| __| __| '__| | '_ \| | | | __/ _ \/ __|
@@ -58,13 +59,18 @@ methods
                    0,           0,          1  ];
     end
    
-        
-
     
     function next_state = update_step(obj, odometry)
 
         next_state = obj.x + JF_x()*odometry.dX;
-        obj.x = next_state;
+        obj.x = next_state; 
+    end
+
+    % see eq. (18) in 
+    % https://www.iri.upc.edu/people/jsola/JoanSola/objectes/curs_SLAM/SLAM2D/SLAM%20course.pdf
+    function [h, Jh_x_robot, Jh_x_landmark] = landmark_observation(obj, landmark)
+        %% TODO
+        
     end
     
 

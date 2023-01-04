@@ -22,12 +22,15 @@
 %         H(k+1) is the jacobian of hk+1(x,epsilon) w.r.t the state e and evaluated in the x_est(k+1) and epsilon = 0
 
 robot = Robot();
-map = Map();
+map   = Map();
+
 x_est = robot.x;
-P_est = robot.P;
-N_feat_map = 0;
+P_est = robot.P
+
 pos_robot = cell(N_laserscans);
 pos_robot = cell(N_laserscans);
+
+
 % Temporal cycle
 for k = 1:N_laserscans
   N_feat_map = map.size();
@@ -41,6 +44,8 @@ for k = 1:N_laserscans
   % Prediction
   x_est(1:3) = robot.update_step(odometries(k))
   P_est = F_X*P*F_X' + F_N*N*F_N';
+
+  z, H_X = map.compute_innovation(robot, laserscans{k}.observations);
 
   % Update
   
