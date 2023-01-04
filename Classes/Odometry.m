@@ -11,6 +11,7 @@ properties
     dy;         % y increment
     dtheta;     % theta increment
     dX;         % column vector of the 3 increments
+    Q;          % covariance matrix of the odometry
 end % properties
 
 %  ____        _     _ _        __  __                _                                                             
@@ -29,17 +30,19 @@ methods
         obj.dy     = data(2);     
         obj.dtheta = data(3);
         obj.dX     = [obj.dx; obj.dy; obj.dtheta];
+
+        obj.Q      = 1e-4 * eye(3); 
     end
 
 
     % Given the current state X_curr of the robot, it computes the updated state X_next based on the
     % odometry dX. It's also able to return the jacobian of such transformation.
     % Based on the update function X_next = f(X_curr, dX) described as
-    %       x_next     = x_curr + cos(theta_curr) * dx - sin(theta_curr) * dy
-    %       y_next     = y_curr + sin(theta_curr) * dx + cos(theta_curr) * dy
-    %       theta_next = theta_curr + dtheta
+    %       x_next     = x_curr + cos(theta_curr) * dx - sin(theta_curr) * dy + noise_x
+    %       y_next     = y_curr + sin(theta_curr) * dx + cos(theta_curr) * dy + noise_y
+    %       theta_next = theta_curr + dtheta + noise_theta
     % that can be rewritten in a form X_next = X_curr + A*dX, where A is actually the jacobian of 
-    % the transformation.
+    % the transformation with respect to the states.
     function [X_next, jac] = update_states(obj, X_curr) 
 
         theta  = X_curr(3);

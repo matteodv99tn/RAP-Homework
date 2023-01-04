@@ -43,14 +43,6 @@ methods
         obj.cartesian   = [ cos(obj.polar(:, 2)), sin(obj.polar(:, 2))] .* obj.polar(:, 1);
         obj.features    = [];
 
-        function out = to_column_vector(in) % converts any vector into a column vector
-            if isrow(in)
-                out = in';
-            else
-                out = in;
-            end
-        end
-
         % struct containing the configuration parameters
         obj.conf = struct( ...
                 'N_min',                8, ...          
