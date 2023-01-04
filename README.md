@@ -19,12 +19,20 @@ In the [Scripts](Scripts/) folder there are developed the main script parts that
 
 
 ## Data structures
-In the file `load_data.m` all data are aggregated in a vector `laserscans` of matlab's cell-arrays. In particular each entry present the following properties:
-- `r`: a vector containing the 361 measurements of the LIDAR's measurement in polar coordinate; it's given the LIDAR span of $180^\circ$;
-- `xscan, yscan`: projection in cartesian coordinates of the pointcloud. In this case it is assumed that the heading of the robot is coincident with the $x$ axis;
-- `t_odo, t_lid`: the true times at which the odometry and lidar measurements are taken respectively;
-- `t`: a newly define time based on the average sampling time; the first measurement starts at `t=1`;
-- `x, y, theta`: the current absolute values of the robot provided by the odometry.
+File [`load_data.m`](load_data.m) reads the [data](Data/) and converts all information into suitable structures for further manipulation, in particular:
+
+- `laserscans` is a cell-array of `N_laserscans` object `Laserscan`; while loading, features are already pre-computed.
+- `odometries` is a cell-array containing (relative) information of the odometries. Each cell is a struct containing:
+    - `x` increment along the _forward direction_;
+    - `y` increment along the _lateral direction_;
+    - `theta` increment of the robot bearing;
+- `laserscans_times` and `odometries_times` are the time vectors of the recorded laserscans and odometries respectively. Their sampling period is `dt_laserscans` and `dt_odometries` (`dt` is the mean sampling period).
+
+**Note:** the extraction of the feature is time consuming, so once files are processed from the script, relevant information are stored in `.mat` files inside the folder `ProcessedData`. Before calling the `load_data.m` script, make sure that 
+```matlab
+load_precomputed_data = true;
+```
+is defined. If the flag is set to true, then it firstly tries to load (if available) data from the `ProcessedData` folder, otherwise it computes them from scratch. If the flag is set to false, the algorithm will always re-compute everything at each run.
 
 ## Classes
 Avaliable classes:

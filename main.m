@@ -12,10 +12,10 @@ addpath('Classes')
 config
 
 % Load the data
+load_precomputed_data = true;
 load_data
 
 
 % Plot the raw data
 plot_animation = true; % flat used to show (or not) an animation of the pointcloud
-pre_compute_features = true; % flag used to pre-compute the features (or not)
 plot_raw_data

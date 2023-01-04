@@ -1,54 +1,133 @@
 
-%% Load raw data from the txt files
-laserscan_data      = readmatrix('simul_LASER_LASER_SIM.txt');
-laserscan_times     = readmatrix('simul_LASER_LASER_SIM_times.txt');
-N_laserscans        = size(laserscan_data, 1);
-disp(['Loaded laserscans data']);
-odometry_data       = readmatrix('simul_ODO.txt');
-odometry_times      = readmatrix('simul_ODO_times.txt');
-N_odometry          = size(odometry_data, 1);
-disp('Loaded odometry data');
-disp(['Number of laserscan entries: ', num2str(N_laserscans)])
-disp(['Number of odometry entries:  ', num2str(N_odometry)])
-
-if(size(laserscan_data, 1) ~= size(laserscan_times, 1))
-    disp('WARNING: lasescar data and times have different number of elements!');
-end
-if(size(odometry_data, 1) ~= size(laserscan_times, 1))
-    disp('WARNING: odometry data and times have different number of elements!');
-end
-if(size(laserscan_data, 2) ~= lidar_N)
-    disp('WARNING: number of data in the laserscans is different from the one reported in configuration');
+if ~exist('ProcessedData', 'dir')
+    mkdir('ProcessedData')
 end
 
 
-%% Organise data in cell arrays
-laserscans  = cell(1, N_laserscans);            % cell-array with all LIDAR scans and other data
-odometries  = cell(1, N_laserscans);            % cell-array with all LIDAR scans and other data
-half_fov    = lidar_fov / 2;
-angles      = linspace(-half_fov, half_fov, lidar_N) * pi / 180;   % LIDAR angles
-times       = zeros(1, N_laserscans);           % time of each scan
+%  _                                                  _       _        
+% | |    __ _ ___  ___ _ __ ___  ___ __ _ _ __     __| | __ _| |_ __ _ 
+% | |   / _` / __|/ _ \ '__/ __|/ __/ _` | '_ \   / _` |/ _` | __/ _` |
+% | |__| (_| \__ \  __/ |  \__ \ (_| (_| | | | | | (_| | (_| | || (_| |
+% |_____\__,_|___/\___|_|  |___/\___\__,_|_| |_|  \__,_|\__,_|\__\__,_|
+%                                                                      
+if load_precomputed_data && exist('ProcessedData/laserscans.mat', 'file')
 
-x           = 0;                                % absolute odometry coordinate value
-y           = 0;                                % absolute odometry coordinate value
-theta       = 0;                                % absolute odometry coordinate value
+    fprintf('Loading data from ProcessedData/laserscans.mat... ');
+    load('ProcessedData/laserscans.mat');
+    fprintf('Done!\n');
 
-% To make easier analysis, we assume a constant sampling time
-dt_laserscan = mean(laserscan_times(2:end) - laserscan_times(1:end-1));
-dt_odometry  = mean(odometry_times(2:end)  - odometry_times(1:end-1) );
-dt           = mean([dt_laserscan, dt_odometry]);
+else % must build the file
+    
+    fprintf('Generating laserscan data from Data/simul_LASER_LASER_SIM.txt\n');
+    laserscan_data  = readmatrix('simul_LASER_LASER_SIM.txt');
+    N_laserscans    = size(laserscan_data, 1);
+    laserscans      = cell(1, N_laserscans);
+    fprintf('Number of laserscans: %d\n', N_laserscans);
 
-for i = 1:N_laserscans 
+    half_fov        = lidar_fov / 2;
+    angles          = linspace(-half_fov, half_fov, lidar_N) * pi / 180;
+
+    N_percentage_steps = 10;
+    percentage_status  = round(linspace(0, N_laserscans, N_percentage_steps+1));
+
+    fprintf('Loading laserscans and pre-computing the features ...\n')
+    j = 1;
+    tic;
+    for i = 1:N_laserscans
+
+        if i > percentage_status(j)
+            fprintf('%3.1f%%  ', 100 * j / N_percentage_steps);
+            j = j + 1;
+        end
+
+        laserscans{i} = Laserscan(laserscan_data(i, :), angles);    % create laserscan object
+        laserscans{i}.extract_feature();                            % extract features
+    end
+    elapsed_time = toc;
+    fprintf('\nDone! Elapsed time: %4.2fs\n', elapsed_time);
+    fprintf('Saving into ProcessedData/laserscans.mat... ');
+    save('ProcessedData/laserscans.mat', 'laserscans', 'N_laserscans');
+    fprintf('Done!\n');
+
+end
+clearvars laserscan_data half_fov angles N_percentage_steps percentage_status
+clearvars i j elapsed_time lidar_fov lidar_N
 
 
-    laserscans{i}       = Laserscan(laserscan_data(i, :), angles);  % create laserscan object
-    odometries{i}.t     = (i-1) * dt;                               % quantized time
-    odometries{i}.x     = odometry_data(i, 1);                      % save abs. odometry
-    odometries{i}.y     = odometry_data(i, 2);                      % save abs. odometry
-    odometries{i}.theta = odometry_data(i, 3);                      % save abs. odometry
-    times(i)            = (i-1) * dt;                               % quantized time
+%   ___      _                      _                    _       _        
+%  / _ \  __| | ___  _ __ ___   ___| |_ _ __ _   _    __| | __ _| |_ __ _ 
+% | | | |/ _` |/ _ \| '_ ` _ \ / _ \ __| '__| | | |  / _` |/ _` | __/ _` |
+% | |_| | (_| | (_) | | | | | |  __/ |_| |  | |_| | | (_| | (_| | || (_| |
+%  \___/ \__,_|\___/|_| |_| |_|\___|\__|_|   \__, |  \__,_|\__,_|\__\__,_|
+%                                            |___/                        
+if load_precomputed_data && exist('ProcessedData/odometries.mat', 'file')
+
+    fprintf('Loading data from ProcessedData/odometries.mat... ');
+    load('ProcessedData/odometries.mat');
+    fprintf('Done!\n');
+
+else % must build the file
+    
+    fprintf('Generating odometry data from Data/simul_ODO.txt\n');
+    odometry_data   = readmatrix('simul_ODO.txt');
+    N_odometries    = size(odometry_data, 1);
+    odometries      = cell(1, N_odometries);
+    fprintf('Number of odometry entries: %d\n', N_laserscans);
+
+    for i = 1:N_odometries
+        odometries{i}.x     = odometry_data(i, 1);
+        odometries{i}.y     = odometry_data(i, 2);
+        odometries{i}.theta = odometry_data(i, 3);
+    end
+    fprintf('Saving into ProcessedData/odometries.mat... ');
+    save('ProcessedData/odometries.mat', 'odometries', 'N_odometries');
+    fprintf('Done!\n');
+
+end
+clearvars odometry_data i
+
+%% Dimensionality check
+if N_laserscans ~= N_odometries
+    warning('Number of laserscans and odometry entries must be the same!');
+end
+
+
+%  _____ _                     
+% |_   _(_)_ __ ___   ___  ___ 
+%   | | | | '_ ` _ \ / _ \/ __|
+%   | | | | | | | | |  __/\__ \
+%   |_| |_|_| |_| |_|\___||___/
+%          
+if load_precomputed_data && exist('ProcessedData/times.mat', 'file')  
+    
+    fprintf('Loading time vectors from ProcessedData/times.mat... ');
+    load('ProcessedData/times.mat');
+    fprintf('Done!\n');
+
+else % must build the file
+    
+    fprintf('Generating time vectors from Data/simul_LASER_LASER_SIM_times.txt ');
+    fprintf('and Data/simul_ODO_times.txt\n');
+    laserscans_times    = readmatrix('simul_LASER_LASER_SIM_times.txt');
+    odometries_times    = readmatrix('simul_ODO_times.txt');
+    dt_laserscans       = mean(laserscans_times(2:end) - laserscans_times(1:end-1));
+    dt_odometries       = mean(odometries_times(2:end) - odometries_times(1:end-1));
+    dt                  = mean([dt_laserscans, dt_odometries]);
+
+    if abs(dt_laserscans - dt_odometries) < 1e-6
+        laserscans_times = 0:dt:(N_laserscans-1)*dt;
+        odometries_times = 0:dt:(N_odometries-1)*dt;
+    else
+        warning('Laserscans and odometries have different sampling times!')
+        laserscans_times = 0:dt_laserscans:(N_laserscans-1)*dt;
+        odometries_times = 0:dt_odometries:(N_odometries-1)*dt;
+    end
+
+    fprintf('Saving into ProcessedData/times.mat... ');
+    save('ProcessedData/times.mat', 'laserscans_times', 'odometries_times', ...
+                                    'dt', 'dt_laserscans', 'dt_odometries');
+    fprintf('Done!\n');
 
 end
 
-clearvars x y theta angles i dt_laserscan dt_odometry laserscan_data odometry_data lidar_fov
-clearvars laserscan_times odometry_times half_fov lidar_N N_laserscans N_odometry
+clearvars load_precomputed_data
