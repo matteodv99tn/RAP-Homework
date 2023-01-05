@@ -86,3 +86,6 @@ References for EKF:
 - [_Slam with EKF, matlab code -> jaijuneja_](https://github.com/jaijuneja/ekf-slam-matlab)
 - [_Slam with EKF, matlab code -> fatmakhalil_](https://github.com/fatmakhalil/EKF-SLAM-from-LiDAR-input-data)
 - [_Simulataneous localization and mapping with the extended Kalman filter - A very quick guide... with Matlab code!_](https://www.iri.upc.edu/people/jsola/JoanSola/objectes/curs_SLAM/SLAM2D/SLAM%20course.pdf)
+
+References for building the map:
+- [_Feature Selection Criteria for Real Time EKF-SLAM Algorithm_](https://journals.sagepub.com/doi/epub/10.5772/7237)
