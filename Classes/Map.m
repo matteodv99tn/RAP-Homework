@@ -26,17 +26,33 @@ methods
     function obj = Map() % constructor
     end
 
-    % Combination of all information
-    function [z, H_x, R] = compute_innovation(obj, robot, observation_vector)
+    % Given the map and a robot placed inside it that provides a vector of observations, this
+    % function should be able to generate:
+    %  - the innovation vector z;
+    %  - the Jacobian of the observation function H_x;
+    %  - the covariance matrix R of the measurement.
+    function [z, H_x, R] = compute_innovation(map, robot, observation_vector)
 
-        P1, P2 = obj.compute_permutations(robot, observation_vector)
+        P1, P2 = obj.compute_correspondences(robot, observation_vector)
 
         %% TODO
 
     end
 
-    
-    function [P1, P2] = compute_permutations(obj, robot, observation_vector)
+    % The objective of this function is to compute the correspondence between the landmarks 
+    % (contained in the map object itself) and the observations coming from a robot.
+    % Calling "O" the Nx1 vector of observation and "L" the Mx1 vector of landmarks, then the 
+    % resulting vectors P1 and P2 should be two Jx1 vectors (of the same size). Note that we expect
+    % in general J < N < M (the number of explored landmarks is higher then the number of 
+    % observations, while not all observation can be associated to a landmark as there may be some
+    % outliers).
+    % With this premise, P1 and P2 are a sequence of pairs indexes relating an observation with a 
+    % landmark, that is for the example
+    %       P1 = [1; 3; 4]      and     P2 = [2; 4; 1]
+    %   - the first observation is associated to the second landmark;
+    %   - the third observation is associated to the fourth landmark;
+    %   - the fourth observation is associated to the first landmark.
+    function [P1, P2] = compute_correspondences(map, robot, observation_vector)
         
         %% TODO
 
