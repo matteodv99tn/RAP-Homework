@@ -85,31 +85,29 @@ methods
         % x_land = x_rob + xp * cos(t_rob) - yp * sin(t_rob) 
         % y_land = y_rob + xp * sin(t_rob) - yp * cos(t_rob)
         %
-        % local coordinates are:
-        xp = cos(t_rob) * (x_land - x_rob) + sin(t_rob) * (y_land - y_rob);
-        yp = cos(t_rob) * (y_land - y_rob) + sin(t_rob) * (- x_land + x_rob);
+        % Solved explicitly for xp and yp:
+        xp = cos(t_rob)*(x_land-x_rob) + sin(t_rob)*(y_land-y_rob);
+        yp = cos(t_rob)*(y_land-y_rob) + sin(t_rob)*(x_rob-y_land);
         
-        h = [xp;yp];
+        h = [xp; yp];
 
         % Jacobian w.r.t the robot state
         j11 = - cos(t_rob);
         j12 = - sin(t_rob);
-        j13 = sin(t_rob) * (x_land - x_rob) - cos(t_rob) * (y_land - y_rob);
+        j13 = -sin(t_rob)*(x_land-x_rob) + cos(t_rob)*(y_land-y_rob);
         j21 = sin(t_rob);
         j22 = - cos(t_rob);
-        j23 = - sin(t_rob) * (y_land - y_rob) + cos(t_rob) * (- x_land + x_rob);
-
-        Jh_x_robot = [j11,j12,j13;
-                      j21,j22,j23];
+        j23 = -sin(t_rob)*(y_land-y_rob) + cos(t_rob)*(x_rob-y_land);
+        Jh_x_robot = [j11, j12, j13;
+                      j21, j22, j23];
 
         % Jacobian w.r.t the landmark state        
         j11 = cos(t_rob);
         j12 = sin(t_rob);
         j21 = - sin(t_rob);
         j22 = cos(t_rob);
-
-        Jh_x_landmark = [j11,j12;
-                         j21,j22];
+        Jh_x_landmark = [j11, j12;
+                         j21, j22];
 
     end
     
