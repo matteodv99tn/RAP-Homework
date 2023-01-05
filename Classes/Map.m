@@ -54,6 +54,12 @@ methods
 
     end
 
+
+    % Given a map it returns the number of landmarks, i.e. the length of the landmark vector
+    function dim = size(map)
+        dim = length(map.landmark_vector);
+    end
+
 %  ____       _            _         __  __                _                   
 % |  _ \ _ __(_)_   ____ _| |_ ___  |  \/  | ___ _ __ ___ | |__   ___ _ __ ___ 
 % | |_) | '__| \ \ / / _` | __/ _ \ | |\/| |/ _ \ '_ ` _ \| '_ \ / _ \ '__/ __|
