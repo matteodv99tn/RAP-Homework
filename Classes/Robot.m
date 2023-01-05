@@ -95,8 +95,8 @@ methods
         j11 = - cos(t_rob);
         j12 = - sin(t_rob);
         j13 = - sin(t_rob) * (x_land - x_rob) + cos(t_rob) * (y_land - y_rob);
-        j21 = cos(t_rob);
-        j22 = sin(t_rob);
+        j21 = sin(t_rob);
+        j22 = - cos(t_rob);
         j23 = - sin(t_rob) * (y_land - y_rob) + cos(t_rob) * (- x_land + x_rob);
         Jh_x_robot = [j11, j12, j13;
                       j21, j22, j23];
