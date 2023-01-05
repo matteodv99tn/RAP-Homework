@@ -87,17 +87,17 @@ methods
         %
         % Solved explicitly for xp and yp:
         xp = cos(t_rob)*(x_land-x_rob) + sin(t_rob)*(y_land-y_rob);
-        yp = cos(t_rob)*(y_land-y_rob) + sin(t_rob)*(x_rob-y_land);
+        yp = cos(t_rob)*(y_land-y_rob) + sin(t_rob)*(x_rob-x_land);
         
         h = [xp; yp];
 
         % Jacobian w.r.t the robot state
         j11 = - cos(t_rob);
         j12 = - sin(t_rob);
-        j13 = -sin(t_rob)*(x_land-x_rob) + cos(t_rob)*(y_land-y_rob);
-        j21 = sin(t_rob);
-        j22 = - cos(t_rob);
-        j23 = -sin(t_rob)*(y_land-y_rob) + cos(t_rob)*(x_rob-y_land);
+        j13 = - sin(t_rob) * (x_land - x_rob) + cos(t_rob) * (y_land - y_rob);
+        j21 = cos(t_rob);
+        j22 = sin(t_rob);
+        j23 = - sin(t_rob) * (y_land - y_rob) + cos(t_rob) * (- x_land + x_rob);
         Jh_x_robot = [j11, j12, j13;
                       j21, j22, j23];
 
