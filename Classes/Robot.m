@@ -68,9 +68,47 @@ methods
 
     % see eq. (18) in 
     % https://www.iri.upc.edu/people/jsola/JoanSola/objectes/curs_SLAM/SLAM2D/SLAM%20course.pdf
+    % Projecting the absolute coordinate of a landmark into the reference frame of the robot.
+    % The function return also the jacobians w.r.t. the state of the robot and the state of the landmark
     function [h, Jh_x_robot, Jh_x_landmark] = landmark_observation(obj, landmark)
-        %% TODO
         
+        % landmark state
+        x_land = landmark.x(1);
+        y_land = landmark.x(2);
+
+        % robot state
+        x_rob = obj.x(1);
+        y_rob = obj.x(2);
+        t_rob = obj.x(3);
+
+        % Transformation of reference frame from global (x_land, y_land) to local (xp, yp)
+        % x_land = x_rob + xp * cos(t_rob) - yp * sin(t_rob) 
+        % y_land = y_rob + xp * sin(t_rob) - yp * cos(t_rob)
+        %
+        % Solved explicitly for xp and yp:
+        xp = cos(t_rob)*(x_land-x_rob) + sin(t_rob)*(y_land-y_rob);
+        yp = cos(t_rob)*(y_land-y_rob) + sin(t_rob)*(x_rob-x_land);
+        
+        h = [xp; yp];
+
+        % Jacobian w.r.t the robot state
+        j11 = - cos(t_rob);
+        j12 = - sin(t_rob);
+        j13 = - sin(t_rob) * (x_land - x_rob) + cos(t_rob) * (y_land - y_rob);
+        j21 = sin(t_rob);
+        j22 = - cos(t_rob);
+        j23 = - sin(t_rob) * (y_land - y_rob) + cos(t_rob) * (- x_land + x_rob);
+        Jh_x_robot = [j11, j12, j13;
+                      j21, j22, j23];
+
+        % Jacobian w.r.t the landmark state        
+        j11 = cos(t_rob);
+        j12 = sin(t_rob);
+        j21 = - sin(t_rob);
+        j22 = cos(t_rob);
+        Jh_x_landmark = [j11, j12;
+                         j21, j22];
+
     end
     
 
