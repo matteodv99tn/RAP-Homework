@@ -123,7 +123,7 @@ methods
             grid = update_grid(grid, i, map.landmark_buffer{i}, map.grid_configuration);
         end
 
-        candidates      = find_candidates(grid);
+        candidates      = map.find_candidates(grid, map.grid_configuration);
         new_landmarks   = map.check_candidates(candidates);
 
         for i = 1:length(new_landmarks)
@@ -182,6 +182,56 @@ methods
     end
 
 
+    % It returns the list of the candidates that can be added to the map. It checks that a square in 
+    % the grid is ammissible for all frames in buffer and compute the landmark position with a  
+    % weighted least square using BLUE estimator.
+    function candidates = find_candidates(map, grid, conf)
+
+        [Nx, Ny] = compute_grid_size(conf);
+        candidates = [];
+
+        landmark_used = cell(1, map.buffer_length);
+        for i = 1:map.buffer_length
+            landmark_used{i} = logical(zeros(1, length(map.landmark_buffer{i})));
+        end
+        
+        for i = 1:Nx % iterate over the grid
+        for j = 1:Ny 
+
+            if all(grid(:, i, j) ~= 0) % check if all occupancy grids have a compatible observation
+
+                % Initialization for the BLUE estimator
+                z = zeros(2*map.buffer_length, 1); % initialize the z vector
+                H = zeros(2*map.buffer_length, 2); % initialize the H matrix
+                R = zeros(2*map.buffer_length);    % initialize the R matrix
+
+                landmark_list = cell(1, map.buffer_length); % initialize the landmarks to fuse
+                for k = 1:map.buffer_length
+                
+                    landmark_list{k} = map.landmark_buffer{k}(grid(k, i, j));   % extract landmark
+                    grid(grid(k, :, :) == grid(k, i, j)) = 0;                   % remove from grid
+                    
+                    % update the z, H and R matrices
+                    z(2*k-1:2*k)            = landmark_list{k}.x;
+                    H(2*k-1:2*k, :)         = eye(2);
+                    R(2*k-1:2*k, 2*k-1:2*k) = landmark_list{k}.P;
+
+                end
+
+                % BLUE estimation
+                new_candidate   = Landmark();
+                new_candidate.x = (H'*inv(R)*H)\(H'*inv(R)*z);
+                new_candidate.P = inv(H'*inv(R)*H);
+
+                % add the landmark to the list of candidates
+                candidates = [candidates; new_candidate];
+
+            end
+        end
+        end
+    end
+
+
     % Given a vector of candidate landmarks that can be added to the map, check their compatibility
     % with the current map and return the list of the new landmarks that can be added.
     function ammissible = check_candidates(map, candidates)
@@ -216,9 +266,9 @@ function grid = update_grid(grid, index, landmarks, conf)
         land = landmarks(k); % extract the current landmark
 
         [U, S, V] = svd(land.covariance); % compute svd on the landmark's covariance
-        diag = 3 * U(:, 1) * sqrt(S(1, 1));   % extract the first eigenvector with associated length
-        Delta_x = abs(diag(1));
-        Delta_y = abs(diag(2));
+        diag = U(:, 1) * sqrt(S(1, 1));   % extract the first eigenvector with associated length
+        Delta_x = 3 * abs(diag(1));
+        Delta_y = 3 * abs(diag(2));
 
         [i_min, j_min] = grid_cartesian_to_indexes(grid, land.x - Delta_x, land.y - Delta_y, conf) - 1;
         [i_max, j_max] = grid_cartesian_to_indexes(grid, land.x + Delta_x, land.y + Delta_y, conf);
@@ -231,15 +281,6 @@ function grid = update_grid(grid, index, landmarks, conf)
             end
         end
     end
-end
-
-
-% It returns the list of the candidates that can be added to the map. It checks that a square in the
-% grid is ammissible for all frames in buffer and compute the landmark position with a weighted 
-% least square.
-function candidates = find_candidates(grid)
-    %% TODO
-
 end
 
 
