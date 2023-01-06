@@ -40,7 +40,8 @@ methods
                 'LB_y',         -10, ...    % lower bound for the y coordinate of the map
                 'UB_y',         10, ...     % upper bound for the y coordinate of the map
                 'dx',           0.1, ...    % grid step size w.r.t. x
-                'dy',           0.1 ...     % grid step size w.r.t. y
+                'dy',           0.1, ..     % grid step size w.r.t. y
+                'threshold',    0.6 ...     % threshold for the occupancy grid
             );
 
     end
@@ -209,8 +210,27 @@ end % Laserscan class
 %   - index:        the index of the landmark vector in the map buffer
 %   - landmarks:    the landmark vector in the map buffer 
 function grid = update_grid(grid, index, landmarks, conf)
-    %% TODO
 
+    for k = 1:length(landmarks)
+
+        land = landmarks(k); % extract the current landmark
+
+        [U, S, V] = svd(land.covariance); % compute svd on the landmark's covariance
+        diag = 3 * U(:, 1) * sqrt(S(1, 1));   % extract the first eigenvector with associated length
+        Delta_x = abs(diag(1));
+        Delta_y = abs(diag(2));
+
+        [i_min, j_min] = grid_cartesian_to_indexes(grid, land.x - Delta_x, land.y - Delta_y, conf) - 1;
+        [i_max, j_max] = grid_cartesian_to_indexes(grid, land.x + Delta_x, land.y + Delta_y, conf);
+        
+        for i = i_min:i_max 
+            for j = j_min:j_max
+                pt                  = grid_indexes_to_cartesian(i, j, conf);
+                point_in_grid       = (mvnpdf(pt, land.x, land.P) > conf.threshold);
+                grid(index, i, j)   = k * point_in_grid;
+            end
+        end
+    end
 end
 
 
@@ -247,4 +267,13 @@ function [i, j] = grid_cartesian_to_indexes(x, y, conf)
         warning('Trying to access a cell outside the grid along the y direction');
         j = Ny;
     end
+end
+
+
+% Given two indexes [i, j] of a grid with configuration conf, it return the respective cartesian
+% coordinate [x, y]
+function [x, y] = grid_indexes_to_cartesian(i, j, conf)
+
+    x = conf.LB_x + (i - 1) * conf.dx;
+    y = conf.LB_y + (j - 1) * conf.dy;
 end
