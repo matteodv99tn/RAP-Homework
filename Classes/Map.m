@@ -8,8 +8,12 @@ classdef Map < handle
 %                                                 
 properties 
 
-    landmark_vector;        % a vector of Landmark objects
-    laserscan_buffer;
+    landmark_vector;        % a vector of Landmark objects that represent the map
+    landmark_buffer;        % a buffer of all Landmark objects seen by the robot in the "n" past 
+                            % scans; this is used to perform the map update to add (or not) new 
+                            % landmarks
+    buffer_length;          % length of the landmark buffer
+    grid_configuration;     % configuration parameters for the grid for the map update
                  
 end % properties
 
@@ -24,6 +28,12 @@ end % properties
 methods 
 
     function obj = Map() % constructor
+        
+        obj.buffer_length = 10;
+        obj.landmark_buffer = cell(1, obj.buffer_length);
+        obj.grid_configuration = struct( ...
+            );
+
     end
 
     
@@ -92,15 +102,28 @@ methods
     end
 
 
-    % Update
-    function update_map(map, new_laserscan)
-        %% TODO
+    % The goal of this function is to add the new observation to a buffer and check if it's possible
+    % to add a new landmark to the map. 
+    function update_map(map, robot, observation_vector)
 
+        map.add_to_buffer(robot, observation_vector);
+        grid = map.initialize_grid();
+
+        for i = 1:map.buffer_length
+            grid = update_grid(grid, i, map.landmark_buffer{i}, map.grid_configuration);
+        end
+
+        candidates      = find_candidates(grid);
+        new_landmarks   = map.check_candidates(candidates);
+
+        for i = 1:length(new_landmarks)
+            map.add_landmark_to_map(new_landmarks(i));
+        end
     end
 
     function loop_closure(map, observation_vector)
         %% TODO
-
+        
     end
 
 
@@ -117,7 +140,58 @@ methods
 %
 % Here are defined auxiliary functions used in the public members or for other simpler computations
 
+    % Given a robot and an observation vector, it returns the associated landmark estimation (with
+    % uncertainty) vector and place it in the map's landmark buffer.
+    function add_to_buffer(map, robot, observation_vector)
+        %% TODO
 
+    end
+
+    
+    % Given the configuration set for the map, it initializes a grid
+    function grid = initialize_grid(map)
+        %% TODO
+
+    end
+
+
+    % Given a vector of candidate landmarks that can be added to the map, check their compatibility
+    % with the current map and return the list of the new landmarks that can be added.
+    function ammissible = check_candidates(map, candidates)
+        %% TODO
+
+    end
+    
+    
+    % Given a landmark that can be added, initialize it properly in the map
+    function add_landmark_to_map(map, landmark)
+        %%  TODO
+
+    end
 
 end % methods
 end % Laserscan class
+
+
+%  ____       _            _          __                  _   _                 
+% |  _ \ _ __(_)_   ____ _| |_ ___   / _|_   _ _ __   ___| |_(_) ___  _ __  ___ 
+% | |_) | '__| \ \ / / _` | __/ _ \ | |_| | | | '_ \ / __| __| |/ _ \| '_ \/ __|
+% |  __/| |  | |\ V / (_| | ||  __/ |  _| |_| | | | | (__| |_| | (_) | | | \__ \
+% |_|   |_|  |_| \_/ \__,_|\__\___| |_|  \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
+
+% It modifies the grid (with configuration "conf") based on
+%   - index:        the index of the landmark vector in the map buffer
+%   - landmarks:    the landmark vector in the map buffer 
+function grid = update_grid(grid, index, landmarks, conf)
+    %% TODO
+
+end
+
+
+% It returns the list of the candidates that can be added to the map. It checks that a square in the
+% grid is ammissible for all frames in buffer and compute the landmark position with a weighted 
+% least square.
+function candidates = find_candidates(grid)
+    %% TODO
+
+end
