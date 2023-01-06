@@ -175,8 +175,7 @@ methods
     function grid = initialize_grid(map)
 
         conf    = map.grid_configuration;
-        N_x     = ceil((conf.UB_x - conf.LB_x) / conf.dx); 
-        N_y     = ceil((conf.UB_y - conf.LB_y) / conf.dy);
+        Nx, Ny  = compute_grid_size(conf)
         grid    = zeros(map.buffer_length, N_x, N_y);
 
     end
@@ -221,4 +220,31 @@ end
 function candidates = find_candidates(grid)
     %% TODO
 
+end
+
+
+% Given the configuration of the map, it returns it's size in terms of number of cells along x and y
+function [Nx, Ny] = compute_grid_size(conf)
+
+    Nx = ceil((conf.UB_x - conf.LB_x) / conf.dx);
+    Ny = ceil((conf.UB_y - conf.LB_y) / conf.dy);
+end
+
+
+% Given two cartesian coordianate [x, y] and a configuration for the grid, it returns the correct
+% indexes to access the grid
+function [i, j] = grid_cartesian_to_indexes(x, y, conf)
+
+    i = ceil((x - conf.LB_x) / conf.dx);
+    j = ceil((y - conf.LB_y) / conf.dy);
+
+    [Nx, Ny] = compute_grid_size(conf);
+    if i > Nx
+        warning('Trying to access a cell outside the grid along the x direction');
+        i = Nx;
+    end
+    if j > Ny
+        warning('Trying to access a cell outside the grid along the y direction');
+        j = Ny;
+    end
 end
