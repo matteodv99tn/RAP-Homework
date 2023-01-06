@@ -40,8 +40,10 @@ methods
                 'LB_y',         -10, ...    % lower bound for the y coordinate of the map
                 'UB_y',         10, ...     % upper bound for the y coordinate of the map
                 'dx',           0.1, ...    % grid step size w.r.t. x
-                'dy',           0.1, ..     % grid step size w.r.t. y
-                'threshold',    0.6 ...     % threshold for the occupancy grid
+                'dy',           0.1, ...    % grid step size w.r.t. y
+                'threshold',    0.6,...     % threshold for the occupancy grid
+                'max_sigma',    0.2 ...     % maximum value for the standard deviation of the 
+                                    ...     % landmarks to be considered valid
             );
 
     end
@@ -234,9 +236,38 @@ methods
 
     % Given a vector of candidate landmarks that can be added to the map, check their compatibility
     % with the current map and return the list of the new landmarks that can be added.
-    function ammissible = check_candidates(map, candidates)
-        %% TODO
+    function admissibles = check_candidates(map, candidates)
+        
+        admissibles = [];
+        
+        for i = 1:length(candidates)    % for each candidate
+            
+            landmark = candidates(i);   % current landmark to check
+            insert_to_map = true;       % flag to check if the landmark can be added
 
+            % If the covariance of the feature is too big, then it's not a good candidate as it do 
+            % not have a good enough precision
+            if max(abs(eig(landmark.P))) > map.grid_configuration.max_sigma    
+                insert_to_map = false;
+                continue;
+            end
+
+            for j = 1:map.size()        % check for an overall with the already present landmarks
+                
+                % If it's too probabile that the candidate landmark is the same as the one in the 
+                % map, then just disregard the candidate
+                if mvnpdf(landmark.x, map.landmark_vector(j).x, map.landmark_vector(j).P) ...
+                        > 0.9
+                    insert_to_map = false;
+                    break;
+                end
+
+            end
+
+            if insert_to_map
+                admissibles = [admissibles; landmark];
+            end
+        end
     end
     
     
