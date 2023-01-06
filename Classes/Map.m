@@ -13,6 +13,8 @@ properties
                             % scans; this is used to perform the map update to add (or not) new 
                             % landmarks
     buffer_length;          % length of the landmark buffer
+    buffer_i;               % index of the current position in the landmark buffer (used to 
+                            % perform the circular buffer)
     grid_configuration;     % configuration parameters for the grid for the map update
                  
 end % properties
@@ -29,8 +31,9 @@ methods
 
     function obj = Map() % constructor
         
-        obj.buffer_length = 10;
+        obj.buffer_length   = 10;
         obj.landmark_buffer = cell(1, obj.buffer_length);
+        obj.buffer_i        = 1;
         obj.grid_configuration = struct( ...
             );
 
@@ -143,8 +146,22 @@ methods
     % Given a robot and an observation vector, it returns the associated landmark estimation (with
     % uncertainty) vector and place it in the map's landmark buffer.
     function add_to_buffer(map, robot, observation_vector)
-        %% TODO
 
+        if map.buffer_i >= map.buffer_length    % reset index if out of bounds
+            map.buffer_i = 1;
+        end
+        
+        i = map.buffer_i;                       % short name
+        landmark_vector = cell(1, length(observation_vector));  % will store landmarks
+        
+        for k = 1:length(observation_vector)
+            observation = observation_vector(k);                % current observation
+            landmark_vector{k} = Landmark(robot, observation);  % add landmark from obs. and robot
+        end
+        
+        map.landmark_buffer{i} = landmark_vector;               % store in buffer
+        map.buffer_i = map.buffer_i + 1;                        % update index
+        
     end
 
     
