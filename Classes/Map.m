@@ -35,6 +35,12 @@ methods
         obj.landmark_buffer = cell(1, obj.buffer_length);
         obj.buffer_i        = 1;
         obj.grid_configuration = struct( ...
+                'LB_x',         -10, ...    % lower bound for the x coordinate of the map
+                'UB_x',         10, ...     % upper bound for the x coordinate of the map
+                'LB_y',         -10, ...    % lower bound for the y coordinate of the map
+                'UB_y',         10, ...     % upper bound for the y coordinate of the map
+                'dx',           0.1, ...    % grid step size w.r.t. x
+                'dy',           0.1 ...     % grid step size w.r.t. y
             );
 
     end
@@ -167,7 +173,11 @@ methods
     
     % Given the configuration set for the map, it initializes a grid
     function grid = initialize_grid(map)
-        %% TODO
+
+        conf    = map.grid_configuration;
+        N_x     = ceil((conf.UB_x - conf.LB_x) / conf.dx); 
+        N_y     = ceil((conf.UB_y - conf.LB_y) / conf.dy);
+        grid    = zeros(map.buffer_length, N_x, N_y);
 
     end
 
