@@ -73,7 +73,8 @@ methods
 
 
     % The objective of this function is to compute the correspondence between the landmarks 
-    % (contained in the map object itself) and the observations coming from a robot.
+    % (contained in the map object itself --> all the golbal landmarks) and the observations 
+    %coming from a robot (landmarks of a single scan from the pov of the robot).
     % Calling "O" the Nx1 vector of observation and "L" the Mx1 vector of landmarks, then the 
     % resulting vectors P1 and P2 should be two Jx1 vectors (of the same size). Note that we expect
     % in general J < N < M (the number of explored landmarks is higher then the number of 
@@ -85,11 +86,35 @@ methods
     %   - the first observation is associated to the second landmark;
     %   - the third observation is associated to the fourth landmark;
     %   - the fourth observation is associated to the first landmark.
+    % The correspondence is computed by comparing the distance between the observation and the
+    % landmark. If the distance is lower than a threshold, then the observation is associated to the
+    % landmark.
     function [P1, P2] = compute_correspondences(map, robot, observation_vector)
-        
-        %% TODO
 
+        % Initialization:
+        P1 = [];
+        P2 = [];
+
+        O = observation_vector;
+        
+        landmark = map.landmark_vector();
+        [h, Jh_x_rob, Jh_x_land] = robot.landmark_observation(landmark);
+        L = h;
+
+        for i = 1:length(O)
+            for j = 1:length(L)
+                p1_obs = [O(2*i-1).z, O(2*i).z];
+                p2_land = [L(2*j-1), L(2*j)];
+                d = map.point_point_distance(p1_obs, p2_land);
+                if (d < 0.1)
+                    P1 = [P1; i];
+                    P2 = [P2; j];
+                end
+            end
+        end
+    
     end
+
 
 
     % Update
@@ -117,6 +142,10 @@ methods
 %
 % Here are defined auxiliary functions used in the public members or for other simpler computations
 
+    % overload of the point_point_distance function to work with vectors of points
+    function d = point_point_distance(map, p1, p2)
+        d = sqrt((p1(1) - p2(1))^2 + (p1(2) - p2(2))^2);
+    end
 
 
 end % methods

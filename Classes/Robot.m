@@ -105,7 +105,7 @@ methods
         j11 = cos(t_rob);
         j12 = sin(t_rob);
         j21 = - sin(t_rob);
-        j22 = - cos(t_rob);
+        j22 = cos(t_rob);
         Jh_x_landmark = [j11, j12;
                          j21, j22];
 
