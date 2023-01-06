@@ -36,12 +36,7 @@ methods
     % https://www.iri.upc.edu/people/jsola/JoanSola/objectes/curs_SLAM/SLAM2D/SLAM%20course.pdf
     function [z, H_x, R] = compute_innovation(map, robot, observation_vector)
 
-        P1, P2 = obj.compute_correspondences(robot, observation_vector)
-
-        if(length(P1) ~ length(P2))
-            error([ 'The number of correspondences is not the same for P1 and P2,',
-                    ' could not compute the innovation vector']);
-        end
+        [P1, P2] = obj.compute_correspondences(robot, observation_vector);
 
         % Initialization:
         dim_z   = 2 * length(P1);       % dimension of the observation vector
@@ -60,7 +55,7 @@ methods
 
             % Compute the estimated observation (with jacobian) bases on the current robot pose 
             % estimation and the landmark position estimation
-            h, Jh_x_rob, Jh_x_land = robot.landmark_observation(landmark);
+            [h, Jh_x_rob, Jh_x_land] = robot.landmark_to_observation(landmark);
 
             % Fill the innovation vector, the Jacobian and the covariance matrix
             z(2*k-1:2*k)                            = observation.z - h;        % eq (19, 26)
@@ -86,35 +81,49 @@ methods
     %   - the first observation is associated to the second landmark;
     %   - the third observation is associated to the fourth landmark;
     %   - the fourth observation is associated to the first landmark.
-    % The correspondence is computed by comparing the distance between the observation and the
-    % landmark. If the distance is lower than a threshold, then the observation is associated to the
-    % landmark.
+    % The correspondence is computed by comparing the distribution of the observations and the
+    % landmarks in the map, taking in account of the covariances.
+    % If 2 observations are associated to the same landmark, the best association is chosen
     function [P1, P2] = compute_correspondences(map, robot, observation_vector)
 
         % Initialization:
         P1 = [];
         P2 = [];
 
-        O = observation_vector;
-        
-        landmark = map.landmark_vector();
-        [h, Jh_x_rob, Jh_x_land] = robot.landmark_observation(landmark);
-        L = h;
+        landmarks = map.landmark_vector;
 
-        for i = 1:length(O)
-            for j = 1:length(L)
-                p1_obs = [O(2*i-1).z, O(2*i).z];
-                p2_land = [L(2*j-1), L(2*j)];
-                d = map.point_point_distance(p1_obs, p2_land);
-                if (d < 0.1)
+        for i = 1:length(observation_vector)
+            absolute_observation = robot.observation_to_landmark(observation_vector(i));
+            for j = 1:length(landmarks)
+                pdf_land_j = mvnpdf(absolute_observation.x, landmarks(j).x, landmarks(j).P);
+                if pdf_land_j > 0.9
+                    index = find(P2==j);
+                    if size(index,2) > 0
+                        % If the landmark is already associated to another observation, then
+                        % we choose the best association (the one with the highest probability)
+                        pdf_land_index = mvnpdf(absolute_observation.x, landmarks(P2(index)).x, landmarks(P2(index)).P);
+                        if pdf_land_index > pdf_land_j
+                            continue;
+                        else
+                            P1(index) = [];
+                            P2(index) = [];
+
+                            disp('WARNING -> two observation are associated to the same landmark');
+
+                        end
+                    end
                     P1 = [P1; i];
                     P2 = [P2; j];
                 end
             end
         end
+
+        if(length(P1) ~ length(P2))
+            error([ 'The number of correspondences is not the same for P1 and P2,',
+                    ' could not compute the innovation vector']);
+        end
     
     end
-
 
 
     % Update
@@ -141,12 +150,6 @@ methods
 % |_|   |_|  |_| \_/ \__,_|\__\___| |_|  |_|\___|_| |_| |_|_.__/ \___|_|  |___/
 %
 % Here are defined auxiliary functions used in the public members or for other simpler computations
-
-    % overload of the point_point_distance function to work with vectors of points
-    function d = point_point_distance(map, p1, p2)
-        d = sqrt((p1(1) - p2(1))^2 + (p1(2) - p2(2))^2);
-    end
-
 
 end % methods
 end % Laserscan class

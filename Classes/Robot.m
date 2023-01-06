@@ -70,7 +70,7 @@ methods
     % https://www.iri.upc.edu/people/jsola/JoanSola/objectes/curs_SLAM/SLAM2D/SLAM%20course.pdf
     % Projecting the absolute coordinate of a landmark into the reference frame of the robot.
     % The function return also the jacobians w.r.t. the state of the robot and the state of the landmark
-    function [h, Jh_x_robot, Jh_x_landmark] = landmark_observation(obj, landmark)
+    function [h, Jh_x_robot, Jh_x_landmark] = landmark_to_observation(obj, landmark)
         
         % landmark state
         x_land = landmark.x(1);
@@ -108,6 +108,44 @@ methods
         j22 = cos(t_rob);
         Jh_x_landmark = [j11, j12;
                          j21, j22];
+
+    end
+
+    % Function that projects an observation with local coordinates --> into the absolute frame.
+    % To project the uncertainty in the global frame we have to add to the covariance of the observation
+    % the projection of the covariance of the robot into the global frame: 
+    % global covariance = R + H*P*H'. 
+    % Where R is the covariance of the observation, H is the jacobian of the transformation  w.r.t. the robot
+    % state and P is the covariance of the local observation.
+    % Absolute_observation is an object of type Landmark (but coming from an observation)
+    function absolute_observation = observation_to_landmark(obj, observation)
+        absolute_observation = Landmark();
+
+        % robot state
+        x_rob = obj.x(1);
+        y_rob = obj.x(2);
+        t_rob = obj.x(3);
+
+        % observation vector
+        xp = observation.x(1);
+        yp = observation.x(2);
+
+        % Transformation of reference frame from local (xp, yp) to global (x_land, y_land)
+        x_land = x_rob + xp * cos(t_rob) - yp * sin(t_rob) 
+        y_land = y_rob + xp * sin(t_rob) - yp * cos(t_rob)
+
+        % Jacobian w.r.t the robot state
+        j11 = 1;
+        j12 = 0;
+        j13 = - xp * sin(t_rob) - yp * cos(t_rob);
+        j21 = 0;
+        j22 = 1;
+        j23 = xp * cos(t_rob) + yp * sin(t_rob);
+        H = [j11, j12, j13;
+             j21, j22, j23];
+        
+        absolute_observation.x = [x_land; y_land];
+        absolute_observation.P = observation.R + H*obj.P*H';
 
     end
     
