@@ -37,16 +37,16 @@ methods
     function obj = Landmark(robot, observation) % constructor
         
         % robot state
-        x_rob = obj.x(1);
-        y_rob = obj.x(2);
-        t_rob = obj.x(3);
+        x_rob = robot.x(1);
+        y_rob = robot.x(2);
+        t_rob = robot.x(3);
         % observation vector
-        xp = observation.x(1);
-        yp = observation.x(2);
+        xp = observation.z(1);
+        yp = observation.z(2);
 
         % Transformation of reference frame from local (xp, yp) to global (x_land, y_land)
-        x_land = x_rob + xp * cos(t_rob) - yp * sin(t_rob) 
-        y_land = y_rob + xp * sin(t_rob) - yp * cos(t_rob)
+        x_land = x_rob + xp * cos(t_rob) - yp * sin(t_rob); 
+        y_land = y_rob + xp * sin(t_rob) - yp * cos(t_rob);
 
         [Jg_x_robot, Jg_x_obs] = compute_jacobians(obj, robot,observation);
         

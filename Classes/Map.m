@@ -197,7 +197,7 @@ methods
         landmark_vector = cell(1, length(observation_vector));  % will store landmarks
         
         for k = 1:length(observation_vector)
-            observation = observation_vector(k);                % current observation
+            observation = observation_vector{k};                % current observation
             landmark_vector{k} = Landmark(robot, observation);  % add landmark from obs. and robot
         end
         
@@ -231,38 +231,38 @@ methods
         end
         
         for i = 1:Nx % iterate over the grid
-        for j = 1:Ny 
+            for j = 1:Ny 
 
-            if all(grid(:, i, j) ~= 0) % check if all occupancy grids have a compatible observation
+                if all(grid(:, i, j) ~= 0) % check if all occupancy grids have a compatible observation
 
-                % Initialization for the BLUE estimator
-                z = zeros(2*map.buffer_length, 1); % initialize the z vector
-                H = zeros(2*map.buffer_length, 2); % initialize the H matrix
-                R = zeros(2*map.buffer_length);    % initialize the R matrix
+                    % Initialization for the BLUE estimator
+                    z = zeros(2*map.buffer_length, 1); % initialize the z vector
+                    H = zeros(2*map.buffer_length, 2); % initialize the H matrix
+                    R = zeros(2*map.buffer_length);    % initialize the R matrix
 
-                landmark_list = cell(1, map.buffer_length); % initialize the landmarks to fuse
-                for k = 1:map.buffer_length
-                
-                    landmark_list{k} = map.landmark_buffer{k}(grid(k, i, j));   % extract landmark
-                    grid(grid(k, :, :) == grid(k, i, j)) = 0;                   % remove from grid
+                    landmark_list = cell(1, map.buffer_length); % initialize the landmarks to fuse
+                    for k = 1:map.buffer_length
                     
-                    % update the z, H and R matrices
-                    z(2*k-1:2*k)            = landmark_list{k}.x;
-                    H(2*k-1:2*k, :)         = eye(2);
-                    R(2*k-1:2*k, 2*k-1:2*k) = landmark_list{k}.P;
+                        landmark_list{k} = map.landmark_buffer{k}(grid(k, i, j));   % extract landmark
+                        grid(grid(k, :, :) == grid(k, i, j)) = 0;                   % remove from grid
+                        
+                        % update the z, H and R matrices
+                        z(2*k-1:2*k)            = landmark_list{k}.x;
+                        H(2*k-1:2*k, :)         = eye(2);
+                        R(2*k-1:2*k, 2*k-1:2*k) = landmark_list{k}.P;
+
+                    end
+
+                    % BLUE estimation
+                    new_candidate   = Landmark();
+                    new_candidate.x = (H'*inv(R)*H)\(H'*inv(R)*z);
+                    new_candidate.P = inv(H'*inv(R)*H);
+
+                    % add the landmark to the list of candidates
+                    candidates = [candidates; new_candidate];
 
                 end
-
-                % BLUE estimation
-                new_candidate   = Landmark();
-                new_candidate.x = (H'*inv(R)*H)\(H'*inv(R)*z);
-                new_candidate.P = inv(H'*inv(R)*H);
-
-                % add the landmark to the list of candidates
-                candidates = [candidates; new_candidate];
-
             end
-        end
         end
     end
 

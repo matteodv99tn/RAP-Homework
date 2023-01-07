@@ -82,7 +82,7 @@ methods
 
 
     % Main function that needs to be called for extracting the feature of the laserscan
-    function observations = extract_feature(obj)
+    function obs = extract_feature(obj)
 
         seeds           = obj.seeding();  
         seeds           = obj.segment_reduction(seeds); 
@@ -90,7 +90,8 @@ methods
         seeds           = obj.segment_reduction(seeds); 
         seeds           = obj.remove_non_proper_seeds(seeds);
         obj.extract_feature_list(seeds);
-        observations    = obj.generate_observations();
+        obs    = obj.generate_observations();
+
 
     end
 
@@ -360,9 +361,12 @@ methods
     function observations = generate_observations(obj)
 
         observations = cell(1, size(obj.features_all, 2));
-        for i = 1:size(obj.feature_all, 2)
+        
+        for i = 1:size(obj.features_all, 2)
+            
             observations{i} = Observation(obj.features_all(:, i));
-        end
+            
+        end 
         obj.observations = observations;
     end
 
