@@ -327,20 +327,23 @@ function grid = update_grid(grid, index, landmarks, conf)
 
     for k = 1:length(landmarks)
 
-        land = landmarks(k); % extract the current landmark
+        land = landmarks{k}; % extract the current landmark
 
-        [U, S, V] = svd(land.covariance); % compute svd on the landmark's covariance
+        [U, S, V] = svd(land.P); % compute svd on the landmark's covariance
         diag = U(:, 1) * sqrt(S(1, 1));   % extract the first eigenvector with associated length
         Delta_x = 3 * abs(diag(1));
         Delta_y = 3 * abs(diag(2));
 
-        [i_min, j_min] = grid_cartesian_to_indexes(grid, land.x - Delta_x, land.y - Delta_y, conf) - 1;
-        [i_max, j_max] = grid_cartesian_to_indexes(grid, land.x + Delta_x, land.y + Delta_y, conf);
+        [i_min, j_min] = grid_cartesian_to_indexes( land.x(1) - Delta_x, land.x(2) - Delta_y, conf);
+        
+        i_min = i_min - 1;
+        j_min = j_min - 1;
+        [i_max, j_max] = grid_cartesian_to_indexes( land.x(1) + Delta_x, land.x(2) + Delta_y, conf);
         
         for i = i_min:i_max 
             for j = j_min:j_max
-                pt                  = grid_indexes_to_cartesian(i, j, conf);
-                point_in_grid       = (mvnpdf(pt, land.x, land.P) > conf.threshold);
+                [a,b]                  = grid_indexes_to_cartesian(i, j, conf);
+                point_in_grid       = (mvnpdf([a,b]', land.x, land.P) > conf.threshold);
                 grid(index, i, j)   = k * point_in_grid;
             end
         end

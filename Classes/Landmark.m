@@ -66,11 +66,11 @@ methods
     % y_land = y_rob + xp * sin(t_rob) + yp * cos(t_rob)
     function [Jg_x_robot, Jg_x_obs] = compute_jacobians(obj, robot,observation)
         
-        x_rob   = obj.x(1);             % robot state
-        y_rob   = obj.x(2);
-        t_rob   = obj.x(3);
-        xp      = observation.x(1);     % observation state
-        yp      = observation.x(2);
+        x_rob   = robot.x(1);             % robot state
+        y_rob   = robot.x(2);
+        t_rob   = robot.x(3);
+        xp      = observation.z(1);     % observation state
+        yp      = observation.z(2);
 
         % Jacobian w.r.t the robot state
         j11 = 1;
