@@ -179,7 +179,7 @@ methods
 
         conf    = map.grid_configuration;
         Nx, Ny  = compute_grid_size(conf)
-        grid    = zeros(map.buffer_length, N_x, N_y);
+        grid    = zeros(map.buffer_length, Nx, Ny);
 
     end
 
