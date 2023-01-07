@@ -1,5 +1,5 @@
 %% Initialization
-close all;
+% close all;
 clear;  
 clc;
 
@@ -20,5 +20,4 @@ load_data
 plot_animation = false; % flat used to show (or not) an animation of the pointcloud
 plot_raw_data
 
-
- EKF
+EKF

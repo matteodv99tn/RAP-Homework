@@ -31,7 +31,7 @@ methods
         obj.dtheta = data(3);
         obj.dX     = [obj.dx; obj.dy; obj.dtheta];
 
-        obj.Q      = 1e-4 * eye(3); 
+        obj.Q      = 10e-4 * eye(3); 
     end
    
 

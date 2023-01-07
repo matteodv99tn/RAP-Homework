@@ -12,10 +12,11 @@ addpath('Classes')
 config
 
 % Load the data
+load_precomputed_data = true;
 load_data
 
-scan = laserscans{1};
-scan.extract_feature();     
-
-figure(1), clf, hold on;
-plot(scan)
+% scan = laserscans{1};
+% scan.extract_feature();     
+% 
+% figure(1), clf, hold on;
+% plot(scan)

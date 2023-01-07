@@ -35,14 +35,14 @@ methods
         obj.landmark_buffer = cell(1, obj.buffer_length);
         obj.buffer_i        = 1;
         obj.grid_configuration = struct( ...
-                'LB_x',         -10, ...    % lower bound for the x coordinate of the map
-                'UB_x',         10, ...     % upper bound for the x coordinate of the map
-                'LB_y',         -10, ...    % lower bound for the y coordinate of the map
-                'UB_y',         10, ...     % upper bound for the y coordinate of the map
-                'dx',           0.1, ...    % grid step size w.r.t. x
-                'dy',           0.1, ...    % grid step size w.r.t. y
-                'threshold',    0.6,...     % threshold for the occupancy grid
-                'max_sigma',    0.2 ...     % maximum value for the standard deviation of the 
+                'LB_x',         -10, ...   % lower bound for the x coordinate of the map
+                'UB_x',         20, ...    % upper bound for the x coordinate of the map
+                'LB_y',         -10, ...   % lower bound for the y coordinate of the map
+                'UB_y',         15, ...    % upper bound for the y coordinate of the map
+                'dx',           0.025, ...    % grid step size w.r.t. x
+                'dy',           0.025, ...    % grid step size w.r.t. y
+                'threshold',    0.2,...     % threshold for the occupancy grid
+                'max_sigma',    0.4 ...     % maximum value for the standard deviation of the 
                                     ...     % landmarks to be considered valid
             );
 
@@ -152,15 +152,26 @@ methods
     % to add a new landmark to the map. 
     function new_landmarks = update_map(map, robot, observation_vector)
 
+        fprintf('Adding to the map %d observations\n', length(observation_vector));
         map.add_to_buffer(robot, observation_vector);
-        grid = map.initialize_grid();
+        grids = map.initialize_grid();
+        tmp = zeros(size(grids, 2), size(grids, 3));
 
         for i = 1:map.buffer_length
-            grid = update_grid(grid, i, map.landmark_buffer{i}, map.grid_configuration);
+            grids = update_grid(grids, i, map.landmark_buffer{i}, map.grid_configuration);
+
         end
 
-        candidates      = map.find_candidates(grid, map.grid_configuration);
+
+        tmp(:,:) = grids(map.buffer_i-1,:,:);
+        figure(1);
+        heatmap(tmp);
+        grid off;
+
+        candidates      = map.find_candidates(grids, map.grid_configuration);
         new_landmarks   = map.check_candidates(candidates);
+        fprintf(' -> Generated %d candidates\n', length(candidates));
+        fprintf(' -> Admissible candidates: %d\n', length(new_landmarks));
 
         map.landmark_vector = [map.landmark_vector; new_landmarks];
 
@@ -189,7 +200,7 @@ methods
     % uncertainty) vector and place it in the map's landmark buffer.
     function add_to_buffer(map, robot, observation_vector)
 
-        if map.buffer_i >= map.buffer_length    % reset index if out of bounds
+        if map.buffer_i > map.buffer_length    % reset index if out of bounds
             map.buffer_i = 1;
         end
         
@@ -235,6 +246,8 @@ methods
 
                 if all(grid(:, i, j) ~= 0) % check if all occupancy grids have a compatible observation
 
+                    fprintf('> ADDING A CANDIDATE \n');
+
                     % Initialization for the BLUE estimator
                     z = zeros(2*map.buffer_length, 1); % initialize the z vector
                     H = zeros(2*map.buffer_length, 2); % initialize the H matrix
@@ -242,14 +255,16 @@ methods
 
                     landmark_list = cell(1, map.buffer_length); % initialize the landmarks to fuse
                     for k = 1:map.buffer_length
-                    
-                        landmark_list{k} = map.landmark_buffer{k}(grid(k, i, j));   % extract landmark
+                        
+                        tmp = map.landmark_buffer{k};
+                        landmark_list{k} = tmp(grid(k, i, j));   % extract landmark
                         grid(grid(k, :, :) == grid(k, i, j)) = 0;                   % remove from grid
                         
                         % update the z, H and R matrices
-                        z(2*k-1:2*k)            = landmark_list{k}.x;
+                        land                    = landmark_list{k}{1};
+                        z(2*k-1:2*k)            = land.x;
                         H(2*k-1:2*k, :)         = eye(2);
-                        R(2*k-1:2*k, 2*k-1:2*k) = landmark_list{k}.P;
+                        R(2*k-1:2*k, 2*k-1:2*k) = land.P;
 
                     end
 

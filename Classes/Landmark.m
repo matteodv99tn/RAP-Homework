@@ -36,6 +36,12 @@ methods
     
     function obj = Landmark(robot, observation) % constructor
         
+        if nargin < 2
+            obj.x = zeros(2, 2);
+            obj.P = zeros(2, 2);
+            return;
+        end
+
         % robot state
         x_rob = robot.x(1);
         y_rob = robot.x(2);

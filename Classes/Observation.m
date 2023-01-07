@@ -36,7 +36,9 @@ methods
                     sin(theta), r*cos(theta)];
         
         % Uncertainties
-        Q       = 1e-4 * eye(2);    % uncertainty in polar coordinates
+        Q       = zeros(2, 2);    % uncertainty in polar coordinates
+        Q(1,1)  = 0.01;
+        Q(2,2)  = 0.05 * pi / 180;
         obj.R   = jac * Q * jac';   % transformation to cartesian coordinates
 
     end

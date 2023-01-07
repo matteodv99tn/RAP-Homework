@@ -90,7 +90,7 @@ methods
         seeds           = obj.segment_reduction(seeds); 
         seeds           = obj.remove_non_proper_seeds(seeds);
         obj.extract_feature_list(seeds);
-        obs    = obj.generate_observations();
+        obs             = obj.generate_observations();
 
 
     end
