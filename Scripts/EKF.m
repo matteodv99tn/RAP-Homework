@@ -33,6 +33,7 @@ pos_robot = cell(N_laserscans);
 
 % Temporal cycle
 for k = 1:N_laserscans
+
   N_feat_map = map.size();
   F_X = eye(2*N_feat_map + 3);
   F_X(1:3,1:3) = robot.JF_x();
@@ -48,6 +49,24 @@ for k = 1:N_laserscans
   z, H_X = map.compute_innovation(robot, laserscans{k}.observations);
 
   % Update
+  
+
+
+  % Update the map
+  new_features = map.update_map(robot, laserscans{k}.observations);
+  for i = 1:length(new_features)
+    
+    landmark = new_features(i);
+
+    P_LL      = landmark.P;                         % eq (35)
+    P_Rx      = P_est(1:3, :);                      % eq (6)
+    [JG_R, ~] = landmark.compute_jacobians(robot);
+    P_Lx      = JG_R*P_Rx;                          % eq (36)
+
+    x_est = [x_est; landmark.x];                    % eq (37)
+    P_est = [P_est, P_Lx';                          % eq (38)
+             P_Lx,  P_LL];
+  end
   
 
 
