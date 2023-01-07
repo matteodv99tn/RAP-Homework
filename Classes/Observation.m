@@ -33,7 +33,7 @@ methods
         
         % Jacobian of the transformation
         jac     = [ cos(theta), -r*sin(theta); ...
-                    sin(theta), r*cos(theta)];
+                    sin(theta),  r*cos(theta)];
         
         % Uncertainties
         Q       = zeros(2, 2);    % uncertainty in polar coordinates

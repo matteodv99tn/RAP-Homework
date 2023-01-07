@@ -36,8 +36,8 @@ methods
         obj.buffer_i        = 1;
         obj.grid_configuration = struct( ...
                 'LB_x',         -10, ...   % lower bound for the x coordinate of the map
-                'UB_x',         20, ...    % upper bound for the x coordinate of the map
-                'LB_y',         -10, ...   % lower bound for the y coordinate of the map
+                'UB_x',         25, ...    % upper bound for the x coordinate of the map
+                'LB_y',         -15, ...   % lower bound for the y coordinate of the map
                 'UB_y',         15, ...    % upper bound for the y coordinate of the map
                 'dx',           0.025, ...    % grid step size w.r.t. x
                 'dy',           0.025, ...    % grid step size w.r.t. y
@@ -72,7 +72,7 @@ methods
 
             i_obs       = P1(k);    % index of the measurement inside the observation vector
             i_land      = P2(k);    % index of the landmark inside the map
-            observation = observation_vector(i_obs);    % current observation of interest
+            observation = observation_vector{i_obs};    % current observation of interest
             landmark    = map.landmark_vector(i_land);  % current landmark of interest
 
             % Compute the estimated observation (with jacobian) bases on the current robot pose 
@@ -115,7 +115,8 @@ methods
         landmarks = map.landmark_vector;
 
         for i = 1:length(observation_vector)
-            absolute_observation = robot.observation_to_landmark(observation_vector(i));
+            absolute_observation = Landmark(robot, observation_vector{i});
+            % absolute_observation = robot.observation_to_landmark(observation_vector(i));
             for j = 1:length(landmarks)
                 pdf_land_j = mvnpdf(absolute_observation.x, landmarks(j).x, landmarks(j).P);
                 if pdf_land_j > 0.9
@@ -366,7 +367,7 @@ function grid = update_grid(grid, index, landmarks, conf)
         for i = i_min:i_max 
             for j = j_min:j_max
                 [a,b]                  = grid_indexes_to_cartesian(i, j, conf);
-                point_in_grid       = (mvnpdf([a,b]', land.x, land.P) > conf.threshold);
+                point_in_grid       = (mvnpdf([a; b], land.x, land.P) > conf.threshold);
                 grid(index, i, j)   = k * point_in_grid;
             end
         end
@@ -397,6 +398,15 @@ function [i, j] = grid_cartesian_to_indexes(x, y, conf)
     if j > Ny
         warning('Trying to access a cell outside the grid along the y direction');
         j = Ny;
+    end
+
+    if i < 1
+        warning('Trying to access a cell outside the grid along the x direction');
+        i = 1;
+    end
+    if j < 1
+        warning('Trying to access a cell outside the grid along the y direction');
+        j = 1;
     end
 end
 

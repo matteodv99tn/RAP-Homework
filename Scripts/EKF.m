@@ -55,9 +55,10 @@ for k = 1:50 %N_laserscans
   if map.size() > 0
     [z, H_X, R] = map.compute_innovation(robot, laserscans{k}.observations);
     S = H_X*P_est*H_X' + R;
-    W = P_est*H_X*inv(S);
+    W = P_est*H_X'*inv(S);
     x_est = x_est + W*z
-    P_est = P_est - W*H_X*P_est;
+    % P_est = P_est - W*H_X*P_est;
+    P_est = P_est - W*S*W';
 
     robot.x = x_est(1:3);
     robot.P = P_est(1:3, 1:3);
@@ -89,7 +90,7 @@ for k = 1:50 %N_laserscans
 
     P_LL      = landmark.P;                         % eq (35)
     P_Rx      = P_est(1:3, :);                      % eq (6)
-    [JG_R, ~] = landmark.compute_jacobians(robot);
+    [JG_R, ~] = landmark.compute_jacobians(robot, Observation(landmark.x));
     P_Lx      = JG_R*P_Rx;                          % eq (36)
 
     x_est = [x_est; landmark.x];                    % eq (37)

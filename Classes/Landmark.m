@@ -10,8 +10,6 @@ properties
 
     x;  % state estimate of the landmark (2x1 vector)
     P;  % related covariance (2x2 matrix)
-
-    obs;
                  
 end % properties
 
@@ -60,7 +58,6 @@ methods
         
         obj.x = [x_land; y_land];
         obj.P = Jg_x_obs*observation.R*Jg_x_obs' + Jg_x_robot*robot.P*Jg_x_robot';
-        obj.obs = observation;
     end
     
     
@@ -73,7 +70,7 @@ methods
     % Observation function to which compute the jacobians:
     % x_land = x_rob + xp * cos(t_rob) - yp * sin(t_rob) 
     % y_land = y_rob + xp * sin(t_rob) + yp * cos(t_rob)
-    function [Jg_x_robot, Jg_x_obs] = compute_jacobians(obj, robot,observation)
+    function [Jg_x_robot, Jg_x_obs] = compute_jacobians(obj, robot, observation)
         
         x_rob   = robot.x(1);             % robot state
         y_rob   = robot.x(2);
