@@ -24,8 +24,8 @@
 robot = Robot();
 map   = Map();
 
-x_est = robot.x;
-P_est = robot.P
+x_est = zeros(3, 1);
+P_est = zeros(3, 3);
 
 pos_robot = cell(N_laserscans);
 cov_robot = cell(N_laserscans);
@@ -34,29 +34,38 @@ cov_robot = cell(N_laserscans);
 % Temporal cycle
 for k = 1:N_laserscans
 
-  N_feat_map = map.size();
-  F_X = eye(2*N_feat_map + 3);
-  F_X(1:3,1:3) = robot.JF_x();
-  F_N = zeros(2*N_feat_map + 3, 3);
-  F_N(1:3,1:3) = robot.JF_n();
-  N = odometries(k).Q;
+  disp(['iteration: ',num2str(k)])
+
+  N_feat_map    = map.size();
+  F_X           = eye(2*N_feat_map + 3);
+  F_X(1:3,1:3)  = robot.JF_x();
+  F_N           = zeros(2*N_feat_map + 3, 3);
+  F_N(1:3,1:3)  = robot.JF_n();
+  N             = odometries{k}.Q;
   
   
   % Prediction
-  x_est(1:3) = robot.update_step(odometries(k))
-  P_est = F_X*P*F_X' + F_N*N*F_N';
+  x_est(1:3) = robot.update_step(odometries{k})
+  P_est = F_X*P_est*F_X' + F_N*N*F_N';
 
+  robot.P = P_est(1:3, 1:3);
   
-  % Update
-  [z, H_X, R] = map.compute_innovation(robot, laserscans{k}.observations);
-  S = H_X*P_est*H_X' + R;
-  W = P_est*H_X/S;
-  x_est = x_est + W*z;
-  P_est = P_est - W*H_X*P_est;
+  % Update if the map is not empty
+  if map.size() > 0
+    [z, H_X, R] = map.compute_innovation(robot, laserscans{k}.observations);
+    S = H_X*P_est*H_X' + R;
+    W = P_est*H_X*inv(S);
+    x_est = x_est + W*z;
+    P_est = P_est - W*H_X*P_est;
 
-  pos_robot(end+1,:) = x_est;
-  cov_robot(end+1,:) = P_est;
+    robot.x = x_est(1:3);
+    robot.P = P_est(1:3, 1:3);
 
+    pos_robot(end+1,:) = x_est;
+    cov_robot(end+1,:) = P_est;
+  else
+    disp('Building the map...')
+  end
 
   % Update the map
   for i = 1:map.size()

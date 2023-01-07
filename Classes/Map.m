@@ -58,11 +58,11 @@ methods
     % https://www.iri.upc.edu/people/jsola/JoanSola/objectes/curs_SLAM/SLAM2D/SLAM%20course.pdf
     function [z, H_x, R] = compute_innovation(map, robot, observation_vector)
 
-        [P1, P2] = obj.compute_correspondences(robot, observation_vector);
+        [P1, P2] = map.compute_correspondences(robot, observation_vector);
 
         % Initialization:
         dim_z   = 2 * length(P1);       % dimension of the observation vector
-        dim_P   = 3 + 2 * map.size();   % dimension of the P matrix (robot pose + (2x)landmarks)
+        dim_P   = 3 + 2*map.size();     % dimension of the P matrix (robot pose + (2x)landmarks)
 
         z       = zeros(dim_z, 1);
         H_x     = zeros(dim_z, dim_P);
@@ -140,7 +140,7 @@ methods
             end
         end
 
-        if(length(P1) ~ length(P2))
+        if(length(P1) ~= length(P2))
             error([ 'The number of correspondences is not the same for P1 and P2,',
                     ' could not compute the innovation vector']);
         end

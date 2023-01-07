@@ -75,9 +75,7 @@ else % must build the file
     fprintf('Number of odometry entries: %d\n', N_laserscans);
 
     for i = 1:N_odometries
-        odometries{i}.x     = odometry_data(i, 1);
-        odometries{i}.y     = odometry_data(i, 2);
-        odometries{i}.theta = odometry_data(i, 3);
+        odometries{i} = Odometry(odometry_data(i, :));
     end
     fprintf('Saving into ProcessedData/odometries.mat... ');
     save('ProcessedData/odometries.mat', 'odometries', 'N_odometries');
