@@ -258,7 +258,15 @@ methods
                         
                         tmp = map.landmark_buffer{k};
                         landmark_list{k} = tmp(grid(k, i, j));   % extract landmark
-                        grid(grid(k, :, :) == grid(k, i, j)) = 0;                   % remove from grid
+
+                        sel1 = grid(k, :, :) == grid(k, i, j);
+                        sel2 = zeros(size(grid, 2), size(grid, 3));
+                        sel2(:, :) = sel1(1, :, :);
+
+                        subgrid = grid(k, :, :);
+                        subgrid(sel1) = 0;
+                        
+                        grid(k, :, :) = subgrid;
                         
                         % update the z, H and R matrices
                         land                    = landmark_list{k}{1};

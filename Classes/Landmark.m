@@ -10,6 +10,8 @@ properties
 
     x;  % state estimate of the landmark (2x1 vector)
     P;  % related covariance (2x2 matrix)
+
+    obs;
                  
 end % properties
 
@@ -58,6 +60,7 @@ methods
         
         obj.x = [x_land; y_land];
         obj.P = Jg_x_obs*observation.R*Jg_x_obs' + Jg_x_robot*robot.P*Jg_x_robot';
+        obj.obs = observation;
     end
     
     
