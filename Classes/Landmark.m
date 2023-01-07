@@ -23,9 +23,22 @@ end % properties
 % here we firstly define the functions that are intended to be called in the main program                                                                                                                   
 methods 
 
-    function obj = Landmark() % constructor
+    function obj = Landmark(robot, observation) % constructor
+        %% TODO
+
     end
     
+
+    function [Jg_x_robot, Jg_x_obs] = compute_jacobians(obj, robot)
+        % compute the jacobians of the observation function
+        % Jg_x_robot: jacobian of the observation function with respect to the robot state
+        % Jg_x_obs: jacobian of the observation function with respect to the landmark state
+        % robot: robot object
+        % obj: landmark object
+
+        %% TODO
+        
+    end
 
 %  ____       _            _         __  __                _                   
 % |  _ \ _ __(_)_   ____ _| |_ ___  |  \/  | ___ _ __ ___ | |__   ___ _ __ ___ 
