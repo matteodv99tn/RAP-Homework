@@ -53,6 +53,11 @@ for k = 1:N_laserscans
 
 
   % Update the map
+  for i = 1:map.size()
+    map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
+    map.landmark_vector(i).P = P_est(3 + 2*i - 1:3 + 2*i, 3 + 2*i - 1:3 + 2*i);
+  end
+
   new_features = map.update_map(robot, laserscans{k}.observations);
   for i = 1:length(new_features)
     
