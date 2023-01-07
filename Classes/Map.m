@@ -36,12 +36,7 @@ methods
     % https://www.iri.upc.edu/people/jsola/JoanSola/objectes/curs_SLAM/SLAM2D/SLAM%20course.pdf
     function [z, H_x, R] = compute_innovation(map, robot, observation_vector)
 
-        P1, P2 = obj.compute_correspondences(robot, observation_vector)
-
-        if(length(P1) ~ length(P2))
-            error([ 'The number of correspondences is not the same for P1 and P2,',
-                    ' could not compute the innovation vector']);
-        end
+        [P1, P2] = obj.compute_correspondences(robot, observation_vector);
 
         % Initialization:
         dim_z   = 2 * length(P1);       % dimension of the observation vector
@@ -60,7 +55,7 @@ methods
 
             % Compute the estimated observation (with jacobian) bases on the current robot pose 
             % estimation and the landmark position estimation
-            h, Jh_x_rob, Jh_x_land = robot.landmark_observation(landmark);
+            [h, Jh_x_rob, Jh_x_land] = robot.landmark_to_observation(landmark);
 
             % Fill the innovation vector, the Jacobian and the covariance matrix
             z(2*k-1:2*k)                            = observation.z - h;        % eq (19, 26)
@@ -73,7 +68,8 @@ methods
 
 
     % The objective of this function is to compute the correspondence between the landmarks 
-    % (contained in the map object itself) and the observations coming from a robot.
+    % (contained in the map object itself --> all the golbal landmarks) and the observations 
+    %coming from a robot (landmarks of a single scan from the pov of the robot).
     % Calling "O" the Nx1 vector of observation and "L" the Mx1 vector of landmarks, then the 
     % resulting vectors P1 and P2 should be two Jx1 vectors (of the same size). Note that we expect
     % in general J < N < M (the number of explored landmarks is higher then the number of 
@@ -85,10 +81,48 @@ methods
     %   - the first observation is associated to the second landmark;
     %   - the third observation is associated to the fourth landmark;
     %   - the fourth observation is associated to the first landmark.
+    % The correspondence is computed by comparing the distribution of the observations and the
+    % landmarks in the map, taking in account of the covariances.
+    % If 2 observations are associated to the same landmark, the best association is chosen
     function [P1, P2] = compute_correspondences(map, robot, observation_vector)
-        
-        %% TODO
 
+        % Initialization:
+        P1 = [];
+        P2 = [];
+
+        landmarks = map.landmark_vector;
+
+        for i = 1:length(observation_vector)
+            absolute_observation = robot.observation_to_landmark(observation_vector(i));
+            for j = 1:length(landmarks)
+                pdf_land_j = mvnpdf(absolute_observation.x, landmarks(j).x, landmarks(j).P);
+                if pdf_land_j > 0.9
+                    index = find(P2==j);
+                    if size(index,2) > 0
+                        % If the landmark is already associated to another observation, then
+                        % we choose the best association (the one with the highest probability)
+                        pdf_land_index = mvnpdf(absolute_observation.x, landmarks(P2(index)).x, landmarks(P2(index)).P);
+                        if pdf_land_index > pdf_land_j
+                            continue;
+                        else
+                            P1(index) = [];
+                            P2(index) = [];
+
+                            disp('WARNING -> two observation are associated to the same landmark');
+
+                        end
+                    end
+                    P1 = [P1; i];
+                    P2 = [P2; j];
+                end
+            end
+        end
+
+        if(length(P1) ~ length(P2))
+            error([ 'The number of correspondences is not the same for P1 and P2,',
+                    ' could not compute the innovation vector']);
+        end
+    
     end
 
 
@@ -116,8 +150,6 @@ methods
 % |_|   |_|  |_| \_/ \__,_|\__\___| |_|  |_|\___|_| |_| |_|_.__/ \___|_|  |___/
 %
 % Here are defined auxiliary functions used in the public members or for other simpler computations
-
-
 
 end % methods
 end % Laserscan class

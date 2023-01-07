@@ -28,7 +28,7 @@ x_est = robot.x;
 P_est = robot.P
 
 pos_robot = cell(N_laserscans);
-pos_robot = cell(N_laserscans);
+cov_robot = cell(N_laserscans);
 
 
 % Temporal cycle
@@ -46,10 +46,16 @@ for k = 1:N_laserscans
   x_est(1:3) = robot.update_step(odometries(k))
   P_est = F_X*P*F_X' + F_N*N*F_N';
 
-  z, H_X = map.compute_innovation(robot, laserscans{k}.observations);
-
-  % Update
   
+  % Update
+  [z, H_X, R] = map.compute_innovation(robot, laserscans{k}.observations);
+  S = H_X*P_est*H_X' + R;
+  W = P_est*H_X/S;
+  x_est = x_est + W*z;
+  P_est = P_est - W*H_X*P_est;
+
+  pos_robot(end+1,:) = x_est;
+  cov_robot(end+1,:) = P_est;
 
 
   % Update the map
