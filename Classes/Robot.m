@@ -141,11 +141,19 @@ methods
         j21 = 0;
         j22 = 1;
         j23 = xp * cos(t_rob) + yp * sin(t_rob);
-        H = [j11, j12, j13;
+        J_R = [j11, j12, j13;
              j21, j22, j23];
         
+        % Jacobian w.r.t the observations
+        j11 = cos(t_rob);
+        j12 = - sin(t_rob);
+        j21 = sin(t_rob);
+        j22 = - cos(t_rob);
+        J_O = [j11, j12;
+               j21, j22];
+        
         absolute_observation.x = [x_land; y_land];
-        absolute_observation.P = observation.R + H*obj.P*H';
+        absolute_observation.P = J_O*observation.R*J_O' + J_R*obj.P*J_R';
 
     end
     
