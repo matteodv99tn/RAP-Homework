@@ -27,12 +27,12 @@ map   = Map();
 x_est = zeros(3, 1);
 P_est = zeros(3, 3);
 
-pos_robot = cell(N_laserscans);
-cov_robot = cell(N_laserscans);
+pos_robot = cell(N_laserscans,1);
+cov_robot = cell(N_laserscans,1);
 
-
+disp('Starting the cycle')
 % Temporal cycle
-for k = 1:N_laserscans
+for k = 1:50 %N_laserscans
 
   disp(['iteration: ',num2str(k)])
 
@@ -47,6 +47,7 @@ for k = 1:N_laserscans
   % Prediction
   x_est(1:3) = robot.update_step(odometries{k});
   P_est = F_X*P_est*F_X' + F_N*N*F_N';
+  disp('Done prediction')
 
   robot.P = P_est(1:3, 1:3);
   
@@ -55,27 +56,33 @@ for k = 1:N_laserscans
     [z, H_X, R] = map.compute_innovation(robot, laserscans{k}.observations);
     S = H_X*P_est*H_X' + R;
     W = P_est*H_X*inv(S);
-    x_est = x_est + W*z;
+    x_est = x_est + W*z
     P_est = P_est - W*H_X*P_est;
 
     robot.x = x_est(1:3);
     robot.P = P_est(1:3, 1:3);
 
-    pos_robot(end+1,:) = x_est;
-    cov_robot(end+1,:) = P_est;
+    pos_robot{k} = x_est(1:3,:);
+    cov_robot{k} = P_est;
+
+    disp('Done update')
   else
-    disp('Building the map...')
+    disp('Map is empty: building it...');
   end
 
   % Update the map
   for i = 1:map.size()
     map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
     map.landmark_vector(i).P = P_est(3 + 2*i - 1:3 + 2*i, 3 + 2*i - 1:3 + 2*i);
+    disp('Creating landmark vector')
   end
 
   new_features = map.update_map(robot, laserscans{k}.observations);
+  disp('new_features: ')
+  disp(new_features)
+
   for i = 1:length(new_features)
-    
+    disp('Updating the whole state and covariance')
     landmark = new_features(i);
 
     P_LL      = landmark.P;                         % eq (35)
@@ -88,6 +95,5 @@ for k = 1:N_laserscans
              P_Lx,  P_LL];
   end
   
-
 
 end
