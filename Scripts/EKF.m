@@ -62,13 +62,15 @@ for k = 1:50 %N_laserscans
     robot.x = x_est(1:3);
     robot.P = P_est(1:3, 1:3);
 
-    pos_robot{k} = x_est(1:3,:);
-    cov_robot{k} = P_est;
-
+    
     disp('Done update')
   else
     disp('Map is empty: building it...');
   end
+
+  % Storing the history of the trajectory
+  pos_robot{k} = x_est(1:3,:);
+  cov_robot{k} = P_est;
 
   % Update the map
   for i = 1:map.size()
