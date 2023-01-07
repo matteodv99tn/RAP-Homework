@@ -116,7 +116,7 @@ methods
 
     % The goal of this function is to add the new observation to a buffer and check if it's possible
     % to add a new landmark to the map. 
-    function update_map(map, robot, observation_vector)
+    function new_landmarks = update_map(map, robot, observation_vector)
 
         map.add_to_buffer(robot, observation_vector);
         grid = map.initialize_grid();
@@ -128,9 +128,8 @@ methods
         candidates      = map.find_candidates(grid, map.grid_configuration);
         new_landmarks   = map.check_candidates(candidates);
 
-        for i = 1:length(new_landmarks)
-            map.add_landmark_to_map(new_landmarks(i));
-        end
+        map.landmark_vector = [map.landmark_vector; new_landmarks];
+
     end
 
     function loop_closure(map, observation_vector)
