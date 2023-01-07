@@ -211,7 +211,7 @@ methods
     function grid = initialize_grid(map)
 
         conf    = map.grid_configuration;
-        Nx, Ny  = compute_grid_size(conf)
+        [Nx, Ny]  = compute_grid_size(conf);
         grid    = zeros(map.buffer_length, Nx, Ny);
 
     end

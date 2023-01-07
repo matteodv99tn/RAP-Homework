@@ -45,7 +45,7 @@ for k = 1:N_laserscans
   
   
   % Prediction
-  x_est(1:3) = robot.update_step(odometries{k})
+  x_est(1:3) = robot.update_step(odometries{k});
   P_est = F_X*P_est*F_X' + F_N*N*F_N';
 
   robot.P = P_est(1:3, 1:3);
