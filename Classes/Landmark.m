@@ -58,6 +58,8 @@ methods
         
         obj.x = [x_land; y_land];
         obj.P = Jg_x_obs*observation.R*Jg_x_obs' + Jg_x_robot*robot.P*Jg_x_robot';
+
+     
     end
     
     

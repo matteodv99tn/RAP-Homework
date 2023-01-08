@@ -31,7 +31,7 @@ methods
 
     function obj = Map() % constructor
         
-        obj.buffer_length   = 10;
+        obj.buffer_length   = 3;
         obj.landmark_buffer = cell(1, obj.buffer_length);
         obj.buffer_i        = 1;
         obj.grid_configuration = struct( ...
@@ -85,6 +85,11 @@ methods
             H_x(2*k-1:2*k, 3+2*i_land-1:3+2*i_land) = Jh_x_land;                % eq (25)
             R(2*k-1:2*k, 2*k-1:2*k)                 = observation.R;
 
+            if ~all(eig(observation.R) > 0)
+                fprintf('In compute_innovation function');
+                error('The covariance matrix of the observation is not positive definite');
+            end
+
         end
     end
 
@@ -118,6 +123,7 @@ methods
             absolute_observation = Landmark(robot, observation_vector{i});
             % absolute_observation = robot.observation_to_landmark(observation_vector(i));
             for j = 1:length(landmarks)
+               
                 pdf_land_j = mvnpdf(absolute_observation.x, landmarks(j).x, landmarks(j).P);
                 if pdf_land_j > 0.9
                     index = find(P2==j);
@@ -281,6 +287,12 @@ methods
                     new_candidate   = Landmark();
                     new_candidate.x = (H'*inv(R)*H)\(H'*inv(R)*z);
                     new_candidate.P = inv(H'*inv(R)*H);
+
+                    if ~all(eig(new_candidate.P) > 0)
+                        fprintf('In find_candidates');
+                        error('The covariance matrix of the landmark is not positive definite');
+                    end
+
                     
                     % add the landmark to the list of candidates
                     candidates = [candidates; new_candidate];
@@ -313,10 +325,10 @@ methods
                 
                 % If it's too probabile that the candidate landmark is the same as the one in the 
                 % map, then just disregard the candidate
-                % if mvnpdf(landmark.x, map.landmark_vector(j).x, map.landmark_vector(j).P) ...
-                %         > 0.9
-                if mvnpdf(map.landmark_vector(j).x, landmark.x, landmark.P) ...
+                if mvnpdf(landmark.x, map.landmark_vector(j).x, map.landmark_vector(j).P) ...
                         > 0.9
+                %if mvnpdf(map.landmark_vector(j).x, landmark.x, landmark.P) ...
+                %        > 0.9
                     insert_to_map = false;
                     break;
                 end
