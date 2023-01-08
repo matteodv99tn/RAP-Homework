@@ -35,12 +35,12 @@ methods
         obj.landmark_buffer = cell(1, obj.buffer_length);
         obj.buffer_i        = 1;
         obj.grid_configuration = struct( ...
-                'LB_x',         -10, ...   % lower bound for the x coordinate of the map
-                'UB_x',         25, ...    % upper bound for the x coordinate of the map
-                'LB_y',         -15, ...   % lower bound for the y coordinate of the map
-                'UB_y',         15, ...    % upper bound for the y coordinate of the map
-                'dx',           0.025, ...    % grid step size w.r.t. x
-                'dy',           0.025, ...    % grid step size w.r.t. y
+                'LB_x',         -5, ...   % lower bound for the x coordinate of the map
+                'UB_x',         35, ...    % upper bound for the x coordinate of the map
+                'LB_y',         -22, ...   % lower bound for the y coordinate of the map
+                'UB_y',         22, ...    % upper bound for the y coordinate of the map
+                'dx',           0.04, ...    % grid step size w.r.t. x
+                'dy',           0.04, ...    % grid step size w.r.t. y
                 'threshold',    0.2,...     % threshold for the occupancy grid
                 'max_sigma',    0.4 ...     % maximum value for the standard deviation of the 
                                     ...     % landmarks to be considered valid
@@ -281,7 +281,7 @@ methods
                     new_candidate   = Landmark();
                     new_candidate.x = (H'*inv(R)*H)\(H'*inv(R)*z);
                     new_candidate.P = inv(H'*inv(R)*H);
-
+                    
                     % add the landmark to the list of candidates
                     candidates = [candidates; new_candidate];
 
@@ -313,7 +313,9 @@ methods
                 
                 % If it's too probabile that the candidate landmark is the same as the one in the 
                 % map, then just disregard the candidate
-                if mvnpdf(landmark.x, map.landmark_vector(j).x, map.landmark_vector(j).P) ...
+                % if mvnpdf(landmark.x, map.landmark_vector(j).x, map.landmark_vector(j).P) ...
+                %         > 0.9
+                if mvnpdf(map.landmark_vector(j).x, landmark.x, landmark.P) ...
                         > 0.9
                     insert_to_map = false;
                     break;

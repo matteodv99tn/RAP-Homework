@@ -50,20 +50,24 @@ for k = 1:50 %N_laserscans
   disp('Done prediction')
 
   robot.P = P_est(1:3, 1:3);
+  for i = 1:map.size()
+    map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
+    map.landmark_vector(i).P = P_est(3 + 2*i - 1:3 + 2*i, 3 + 2*i - 1:3 + 2*i);
+  end
   
   % Update if the map is not empty
   if map.size() > 0
     [z, H_X, R] = map.compute_innovation(robot, laserscans{k}.observations);
     S = H_X*P_est*H_X' + R;
     W = P_est*H_X'*inv(S);
-    x_est = x_est + W*z
+    x_est = x_est + W*z;
     % P_est = P_est - W*H_X*P_est;
     P_est = P_est - W*S*W';
+    % P_est = (eye(size(P_est)) - W*H_X)*P_est;
 
     robot.x = x_est(1:3);
     robot.P = P_est(1:3, 1:3);
 
-    
     disp('Done update')
   else
     disp('Map is empty: building it...');
@@ -74,10 +78,11 @@ for k = 1:50 %N_laserscans
   cov_robot{k} = P_est;
 
   % Update the map
+  disp('Updating maps landmark vector:')
   for i = 1:map.size()
     map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
     map.landmark_vector(i).P = P_est(3 + 2*i - 1:3 + 2*i, 3 + 2*i - 1:3 + 2*i);
-    disp('Creating landmark vector')
+    disp(eig(map.landmark_vector(i).P));    
   end
 
   new_features = map.update_map(robot, laserscans{k}.observations);
