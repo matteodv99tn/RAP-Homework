@@ -37,9 +37,9 @@ disp('Starting the cycle')
 % Temporal cycle
 for k = 1:50 %N_laserscans
 
-  fprintf('================== %d ========================\n', k);
-
-  
+  fprintf('================================> Iteration %6d <================================\n', k);
+  fprintf('Current map size: %d\n', map.size());
+   
   check_covariance_matrix(P_est, 'Iteration start');
 
   N_feat_map    = map.size();
@@ -51,24 +51,27 @@ for k = 1:50 %N_laserscans
   
   
   % Prediction
+  fprintf('Prediction...');
   x_est(1:3) = robot.update_step(odometries{k});
   P_est = F_X*P_est*F_X' + F_N*N*F_N';
-  disp('Done prediction')
-
+  fprintf('Done!\n');
   check_covariance_matrix(P_est, 'After prediction');
 
+  fprintf('Copying states from EKF to map...');
   robot.P = P_est(1:3, 1:3);
   for i = 1:map.size()
     map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
     map.landmark_vector(i).P = P_est(3 + 2*i - 1:3 + 2*i, 3 + 2*i - 1:3 + 2*i);
   end
+  fprintf('Done!\n');
   
   tmp = eig(P_est);
   tmp2 = diag(P_est);
   
   % Update if the map is not empty
   if map.size() > 0
-    
+
+    fprintf('Performing an update step...');
     [z, H_X, R] = map.compute_innovation(robot, laserscans{k}.observations);
     S = H_X*P_est*H_X' + R;
     W = P_est*H_X'*inv(S);
@@ -76,39 +79,35 @@ for k = 1:50 %N_laserscans
     % P_est = P_est - W*H_X*P_est;
     P_est = P_est - W*S*W';
     % P_est = (eye(size(P_est)) - W*H_X)*P_est;
-
-    robot.x = x_est(1:3);
-    robot.P = P_est(1:3, 1:3);
-
-    disp('Done update')
+    fprintf('Done!\n');
   else
-    disp('Map is empty: building it...');
+    fprintf('Empty map, no update step necessary!\n');
   end
   
   check_covariance_matrix(P_est, 'After update')  
 
-  % Storing the history of the trajectory
-  pos_robot{k} = x_est(1:3,:);
-  cov_robot{k} = P_est;
-
   % Update the map
-  disp('Updating maps landmark vector:')
+
+  fprintf('Copying states from EKF to map...');
+  robot.x = x_est(1:3);
+  robot.P = P_est(1:3, 1:3);
   for i = 1:map.size()
     map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
     map.landmark_vector(i).P = P_est(3 + 2*i - 1:3 + 2*i, 3 + 2*i - 1:3 + 2*i);
 
     check_covariance_matrix(map.landmark_vector(i).P, 'Copying landmark after update')
   end
+  fprintf('Done!\n');
 
+  fprintf('Performing map update...');
   new_features = map.update_map(robot, laserscans{k}.observations);
-  disp('new_features: ')
-  disp(new_features)
+  fprintf('found %d new features\n', length(new_features));
 
   for i = 1:length(new_features)
-    disp('Updating the whole state and covariance')
+    fprintf('Adding new feature #%2d (observation %d)... ', i, new_features(i));
+
     landmark_index = new_features(i);
-    
-    obs = laserscans{k}.observations(landmark_index);
+    obs = laserscans{k}.observations{landmark_index};
     landmark = Landmark(robot, obs);
 
     P_LL      = landmark.P;                         % eq (35)
@@ -120,6 +119,7 @@ for k = 1:50 %N_laserscans
     x_est = [x_est; landmark.x];                    % eq (37)
     P_est = [P_est, P_Lx';                          % eq (38)
              P_Lx,  P_LL];
+    fprintf('Done!\n');
 
     check_covariance_matrix(P_est, 'Stacking a new landmark');
   end
@@ -129,10 +129,10 @@ end
 
 
 function check_covariance_matrix(P, text)
-  if nargin == 2
-    fprintf('%s\n', text);
-  end
   if ~all(eig(P) >= 0)
+    if nargin == 2
+      fprintf('\n\nCOVARIANCE ERROR: %s\n\n', text);
+    end
     error('The covariance matrix of the observation is not positive definite');
   end
 end
