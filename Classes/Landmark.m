@@ -52,10 +52,10 @@ methods
 
         % Transformation of reference frame from local (xp, yp) to global (x_land, y_land)
         x_land = x_rob + xp * cos(t_rob) - yp * sin(t_rob); 
-        y_land = y_rob + xp * sin(t_rob) - yp * cos(t_rob);
+        y_land = y_rob + xp * sin(t_rob) + yp * cos(t_rob);
 
         [Jg_x_robot, Jg_x_obs] = compute_jacobians(obj, robot,observation);
-        
+            
         obj.x = [x_land; y_land];
         obj.P = Jg_x_obs*observation.R*Jg_x_obs' + Jg_x_robot*robot.P*Jg_x_robot';
 

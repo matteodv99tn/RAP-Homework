@@ -33,9 +33,12 @@ cov_robot = cell(N_laserscans,1);
 tmp = 0;
 tmp2 = 0;
 
+T_limit = 30;
+P_est_norm = zeros(T_limit, 1);
+
 disp('Starting the cycle')
 % Temporal cycle
-for k = 1:50 %N_laserscans
+for k = 1:T_limit
 
   fprintf('================================> Iteration %6d <================================\n', k);
   fprintf('Current map size: %d\n', map.size());
@@ -71,8 +74,9 @@ for k = 1:50 %N_laserscans
   % Update if the map is not empty
   if map.size() > 0
 
-    fprintf('Performing an update step...');
+    fprintf('Performing an update step ');
     [z, H_X, R] = map.compute_innovation(robot, laserscans{k}.observations);
+    fprintf('using %d observations...', round(length(z)/2));
     S = H_X*P_est*H_X' + R;
     W = P_est*H_X'*inv(S);
     x_est = x_est + W*z;
@@ -84,6 +88,7 @@ for k = 1:50 %N_laserscans
     fprintf('Empty map, no update step necessary!\n');
   end
   
+
   check_covariance_matrix(P_est, 'After update')  
 
   % Update the map
@@ -91,6 +96,8 @@ for k = 1:50 %N_laserscans
   fprintf('Copying states from EKF to map...');
   robot.x = x_est(1:3);
   robot.P = P_est(1:3, 1:3);
+  P_est_norm(k) = norm(robot.P);
+  
   for i = 1:map.size()
     map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
     map.landmark_vector(i).P = P_est(3 + 2*i - 1:3 + 2*i, 3 + 2*i - 1:3 + 2*i);
@@ -124,8 +131,18 @@ for k = 1:50 %N_laserscans
     check_covariance_matrix(P_est, 'Stacking a new landmark');
   end
   
+  figure(2), clf;
+  plot(map, length(new_features));
+
+  figure(3), clf;
+  plot(laserscans{k});
+  
+  figure(4), clf;
+  plot(P_est_norm);
 
 end
+
+
 
 
 function check_covariance_matrix(P, text)

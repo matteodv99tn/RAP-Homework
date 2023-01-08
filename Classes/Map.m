@@ -49,14 +49,32 @@ methods
     end
 
 
-    function plot(map)
-        
+    function plot(map, n_new)
+        clf;
+        if nargin < 2
+            n_new = 0;
+        end
+
         for i = 1:map.size()
             
             plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
             hold on;
         end
 
+        buffer_lands = map.landmark_buffer{map.buffer_i-1};
+        for i = 1:length(buffer_lands)-n_new
+
+            plot(buffer_lands{i}.x(1), buffer_lands{i}.x(2), '+r');
+            hold on;
+
+        end
+        for i = length(buffer_lands)-n_new+1:length(buffer_lands)
+
+            plot(buffer_lands{i}.x(1), buffer_lands{i}.x(2), 'om');
+            hold on;
+
+        end
+        
     end
 
     
@@ -106,8 +124,8 @@ methods
 
 
     % The objective of this function is to compute the correspondence between the landmarks 
-    % (contained in the map object itself --> all the golbal landmarks) and the observations 
-    %coming from a robot (landmarks of a single scan from the pov of the robot).
+    % (contained in the map object itself --> all the global landmarks) and the observations 
+    % coming from a robot (landmarks of a single scan from the pov of the robot).
     % Calling "O" the Nx1 vector of observation and "L" the Mx1 vector of landmarks, then the 
     % resulting vectors P1 and P2 should be two Jx1 vectors (of the same size). Note that we expect
     % in general J < N < M (the number of explored landmarks is higher then the number of 
@@ -142,7 +160,7 @@ methods
                         % If the landmark is already associated to another observation, then
                         % we choose the best association (the one with the highest probability)
                         pdf_land_index = mvnpdf(absolute_observation.x, landmarks(P2(index)).x, landmarks(P2(index)).P);
-                        if pdf_land_index > pdf_land_j
+                        if pdf_land_index < pdf_land_j
                             continue;
                         else
                             P1(index) = [];
@@ -335,14 +353,19 @@ methods
 
             for j = 1:map.size()        % check for an overall with the already present landmarks
                 
+                if norm(landmark.x - map.landmark_vector(j).x) < 0.2*0.2
+                    insert_to_map = false;
+                    continue;
+                end
+
                 % If it's too probabile that the candidate landmark is the same as the one in the 
                 % map, then just disregard the candidate
-                if mvnpdf(landmark.x, map.landmark_vector(j).x, map.landmark_vector(j).P) ...
-                        > 0.99
-                %if mvnpdf(map.landmark_vector(j).x, landmark.x, landmark.P) ...
-                %        > 0.99
+                % if mvnpdf(landmark.x, map.landmark_vector(j).x, map.landmark_vector(j).P) ...
+                %         > 0.99
+                if mvnpdf(map.landmark_vector(j).x, landmark.x, landmark.P) ...
+                        > 0.9
                     insert_to_map = false;
-                    break;
+                    continue;
                 end
 
             end

@@ -92,10 +92,15 @@ methods
         % y_land = y_rob + xp * sin(t_rob) + yp * cos(t_rob)
         %
         % Solved explicitly for xp and yp:
-        xp = cos(t_rob)*(x_land-x_rob) + sin(t_rob)*(y_land-y_rob);
-        yp = cos(t_rob)*(y_land-y_rob) + sin(t_rob)*(x_rob-x_land);
-        
-        h = [xp; yp];
+        R = [cos(t_rob), -sin(t_rob); 
+             sin(t_rob),  cos(t_rob)];
+        Xland = [x_land; y_land];
+        Xrob = [x_rob; y_rob];
+        % Xland = Xrob + R*h;
+        h = R'*(Xland - Xrob);
+        % xp = cos(t_rob)*(x_land-x_rob) + sin(t_rob)*(y_land-y_rob);
+        % yp = cos(t_rob)*(y_land-y_rob) + sin(t_rob)*(x_rob-x_land);
+        % h = [xp; yp];
 
         % Jacobian w.r.t the robot state
         j11 = - cos(t_rob);
