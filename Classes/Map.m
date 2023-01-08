@@ -176,7 +176,7 @@ methods
         grid off;
 
         candidates      = map.find_candidates(grids, map.grid_configuration);
-        new_landmarks   = map.check_candidates(candidates);
+        new_landmarks   = map.check_candidates(candidates, robot);
         fprintf(' -> Generated %d candidates\n', length(candidates));
         fprintf(' -> Admissible candidates: %d\n', length(new_landmarks));
 
@@ -251,6 +251,8 @@ methods
         for i = 1:Nx % iterate over the grid
             for j = 1:Ny 
 
+                obs_index = 0;
+
                 if all(grid(:, i, j) ~= 0) % check if all occupancy grids have a compatible observation
 
                     fprintf('> ADDING A CANDIDATE \n');
@@ -259,6 +261,8 @@ methods
                     z = zeros(2*map.buffer_length, 1); % initialize the z vector
                     H = zeros(2*map.buffer_length, 2); % initialize the H matrix
                     R = zeros(2*map.buffer_length);    % initialize the R matrix
+
+                    obs_index = grid(map.buffer_i - 1, i, j);
 
                     landmark_list = cell(1, map.buffer_length); % initialize the landmarks to fuse
                     for k = 1:map.buffer_length
@@ -284,18 +288,18 @@ methods
                     end
 
                     % BLUE estimation
-                    new_candidate   = Landmark();
-                    new_candidate.x = (H'*inv(R)*H)\(H'*inv(R)*z);
-                    new_candidate.P = inv(H'*inv(R)*H);
+                    % new_candidate   = Landmark();
+                    % new_candidate.x = (H'*inv(R)*H)\(H'*inv(R)*z);
+                    % new_candidate.P = inv(H'*inv(R)*H);
 
-                    if ~all(eig(new_candidate.P) > 0)
-                        fprintf('In find_candidates');
-                        error('The covariance matrix of the landmark is not positive definite');
-                    end
+                    % if ~all(eig(new_candidate.P) > 0)
+                    %     fprintf('In find_candidates');
+                    %     error('The covariance matrix of the landmark is not positive definite');
+                    % end
 
                     
                     % add the landmark to the list of candidates
-                    candidates = [candidates; new_candidate];
+                    candidates = [candidates; obs_index];
 
                 end
             end
@@ -305,13 +309,14 @@ methods
 
     % Given a vector of candidate landmarks that can be added to the map, check their compatibility
     % with the current map and return the list of the new landmarks that can be added.
-    function admissibles = check_candidates(map, candidates)
+    function admissibles = check_candidates(map, candidates, robot)
         
         admissibles = [];
         
         for i = 1:length(candidates)    % for each candidate
             
-            landmark = candidates(i);   % current landmark to check
+            landmark = map.landmark_buffer{map.buffer_i - 1}{candidates(i)}; % current landmark to check
+               
             insert_to_map = true;       % flag to check if the landmark can be added
 
             % If the covariance of the feature is too big, then it's not a good candidate as it do 

@@ -106,12 +106,15 @@ for k = 1:50 %N_laserscans
 
   for i = 1:length(new_features)
     disp('Updating the whole state and covariance')
-    landmark = new_features(i);
+    landmark_index = new_features(i);
+    
+    obs = laserscans{k}.observations(landmark_index);
+    landmark = Landmark(robot, obs);
 
     P_LL      = landmark.P;                         % eq (35)
     check_covariance_matrix(P_LL, 'Stacking a new landmark in P_LL');
     P_Rx      = P_est(1:3, :);                      % eq (6)
-    [JG_R, ~] = landmark.compute_jacobians(robot, Observation(landmark.x));
+    [JG_R, ~] = landmark.compute_jacobians(robot, obs);
     P_Lx      = JG_R*P_Rx;                          % eq (36)
 
     x_est = [x_est; landmark.x];                    % eq (37)
