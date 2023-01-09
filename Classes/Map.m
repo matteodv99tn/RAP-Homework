@@ -48,6 +48,17 @@ methods
 
     end
 
+
+    function plot(map)
+        
+        for i = 1:map.size()
+            
+            plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
+            hold on;
+        end
+
+    end
+
     
     % Given the map and a robot placed inside it that provides a vector of observations, this
     % function should be able to generate:
@@ -327,9 +338,9 @@ methods
                 % If it's too probabile that the candidate landmark is the same as the one in the 
                 % map, then just disregard the candidate
                 if mvnpdf(landmark.x, map.landmark_vector(j).x, map.landmark_vector(j).P) ...
-                        > 0.9
+                        > 0.99
                 %if mvnpdf(map.landmark_vector(j).x, landmark.x, landmark.P) ...
-                %        > 0.9
+                %        > 0.99
                     insert_to_map = false;
                     break;
                 end
