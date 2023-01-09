@@ -61,6 +61,7 @@ methods
         for i = 1:map.size()
             
             plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
+            plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.99,'b')
             hold on;
         end
 
@@ -68,6 +69,7 @@ methods
         for i = 1:length(buffer_lands)-n_new
 
             plot(buffer_lands{i}.x(1), buffer_lands{i}.x(2), '+r');
+            plotErrorEllipse([buffer_lands{i}.x(1),buffer_lands{i}.x(2)], buffer_lands{i}.P, 0.99,'r')
             hold on;
 
         end
@@ -445,4 +447,17 @@ end
 % function that computes the mahalanobis distance
 function d = mahalanobis_distance(x, y, P)
     d = sqrt((x - y)' * inv(P) * (x - y));  % eq (83)
+end
+
+% Plot ellipsoid
+function plotErrorEllipse(mu, Sigma, p, color)
+
+    s = -2 * log(1 - p);
+
+    [V, D] = eig(Sigma * s);
+
+    t = linspace(0, 2 * pi);
+    a = (V * sqrt(D)) * [cos(t(:))'; sin(t(:))'];
+ 
+    plot(a(1, :) + mu(1), a(2, :) + mu(2),color);
 end

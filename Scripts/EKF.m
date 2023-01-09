@@ -98,6 +98,9 @@ for k = 1:T_limit
   robot.P = P_est(1:3, 1:3);
   P_est_norm(k) = norm(robot.P);
   
+  pos_robot{k,1} = x_est(1:3);
+
+
   for i = 1:map.size()
     map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
     map.landmark_vector(i).P = P_est(3 + 2*i - 1:3 + 2*i, 3 + 2*i - 1:3 + 2*i);
@@ -131,10 +134,11 @@ for k = 1:T_limit
 
     check_covariance_matrix(P_est, 'Stacking a new landmark');
   end
-  
-  figure(2), clf;
-  plot(map, length(new_features));
 
+  figure(2),clf;
+  plot(map, length(new_features));
+  hold on
+  
   figure(3), clf;
   plot(laserscans{k});
   
