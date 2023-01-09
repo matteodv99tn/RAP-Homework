@@ -16,7 +16,8 @@ properties
     buffer_i;               % index of the current position in the landmark buffer (used to 
                             % perform the circular buffer)
     grid_configuration;     % configuration parameters for the grid for the map update
-                 
+    grid;
+
 end % properties
 
 %  ____        _     _ _        __  __                _                                                             
@@ -31,20 +32,22 @@ methods
 
     function obj = Map() % constructor
         
-        obj.buffer_length   = 10;
+        obj.buffer_length   = 7;
         obj.landmark_buffer = cell(1, obj.buffer_length);
         obj.buffer_i        = 1;
         obj.grid_configuration = struct( ...
-                'LB_x',         -15, ...   % lower bound for the x coordinate of the map
-                'UB_x',         27, ...    % upper bound for the x coordinate of the map
+                'LB_x',         -20, ...   % lower bound for the x coordinate of the map
+                'UB_x',         20, ...    % upper bound for the x coordinate of the map
                 'LB_y',         -20, ...   % lower bound for the y coordinate of the map
-                'UB_y',         22, ...    % upper bound for the y coordinate of the map
-                'dx',           0.05, ...    % grid step size w.r.t. x
-                'dy',           0.05, ...    % grid step size w.r.t. y
+                'UB_y',         20, ...    % upper bound for the y coordinate of the map
+                'dx',           0.08, ...    % grid step size w.r.t. x
+                'dy',           0.08, ...    % grid step size w.r.t. y
                 'threshold',    0.2,...     % threshold for the occupancy grid
                 'max_sigma',    0.4 ...     % maximum value for the standard deviation of the 
                                     ...     % landmarks to be considered valid
             );
+
+        obj.grid = obj.initialize_grid();
 
     end
 
@@ -152,15 +155,21 @@ methods
             absolute_observation = Landmark(robot, observation_vector{i});
             % absolute_observation = robot.observation_to_landmark(observation_vector(i));
             for j = 1:length(landmarks)
-               
-                pdf_land_j = mvnpdf(absolute_observation.x, landmarks(j).x, landmarks(j).P);
-                if pdf_land_j > 0.9
+                % pdf_land_j = mvnpdf(absolute_observation.x, landmarks(j).x, landmarks(j).P);
+                % Compute mahalanobis distance between the observation and the landmark
+                % (the mahalanobis distance is a measure of the distance between two multivariate
+                % normal distributions)
+                d_obs_land = mahalanobis_distance(absolute_observation.x, landmarks(j).x, landmarks(j).P);
+                if d_obs_land < 2
                     index = find(P2==j);
-                    if size(index,2) > 0
+                    if length(index) > 0
                         % If the landmark is already associated to another observation, then
                         % we choose the best association (the one with the highest probability)
-                        pdf_land_index = mvnpdf(absolute_observation.x, landmarks(P2(index)).x, landmarks(P2(index)).P);
-                        if pdf_land_index < pdf_land_j
+                        X1 = absolute_observation.x;
+                        X2 = landmarks(P2(index)).x;
+                        X3 = landmarks(P2(index)).P;
+                        d_obs_land_2 = mahalanobis_distance(X1, X2, X3);
+                        if d_obs_land_2 < d_obs_land
                             continue;
                         else
                             P1(index) = [];
@@ -189,19 +198,15 @@ methods
     function new_landmarks = update_map(map, robot, observation_vector)
 
         map.add_to_buffer(robot, observation_vector);
-        grids = map.initialize_grid();
-        tmp = zeros(size(grids, 2), size(grids, 3));
+        grids = map.grid;
 
-        for i = 1:map.buffer_length
-            grids = update_grid(grids, i, map.landmark_buffer{i}, map.grid_configuration);
-
-        end
-
-
-        tmp(:,:) = grids(map.buffer_i-1,:,:);
-        figure(1);
-        heatmap(tmp);
-        grid off;
+        grids = update_grid(grids, map.buffer_i - 1, map.landmark_buffer{map.buffer_i - 1}, map.grid_configuration);
+        
+        % tmp = zeros(size(grids, 2), size(grids, 3));
+        % tmp(:,:) = grids(map.buffer_i-1,:,:);
+        % figure(1);
+        % heatmap(tmp);
+        % grid off;
 
         candidates      = map.find_candidates(grids, map.grid_configuration);
         new_landmarks   = map.check_candidates(candidates, robot);
@@ -209,6 +214,9 @@ methods
         for i = 1:length(new_landmarks)
             map.landmark_vector = [map.landmark_vector; Landmark(robot, observation_vector{new_landmarks(i)})];
         end
+
+        map.grid = grids;
+    
     end
 
     function loop_closure(map, observation_vector)
@@ -269,11 +277,6 @@ methods
 
         [Nx, Ny] = compute_grid_size(conf);
         candidates = [];
-
-        landmark_used = cell(1, map.buffer_length);
-        for i = 1:map.buffer_length
-            landmark_used{i} = logical(zeros(1, length(map.landmark_buffer{i})));
-        end
         
         for i = 1:Nx % iterate over the grid
             for j = 1:Ny 
@@ -282,46 +285,14 @@ methods
 
                 if all(grid(:, i, j) ~= 0) % check if all occupancy grids have a compatible observation
 
-                    % Initialization for the BLUE estimator
-                    z = zeros(2*map.buffer_length, 1); % initialize the z vector
-                    H = zeros(2*map.buffer_length, 2); % initialize the H matrix
-                    R = zeros(2*map.buffer_length);    % initialize the R matrix
-
                     obs_index = grid(map.buffer_i - 1, i, j);
 
-                    landmark_list = cell(1, map.buffer_length); % initialize the landmarks to fuse
                     for k = 1:map.buffer_length
-                        
-                        tmp = map.landmark_buffer{k};
-                        landmark_list{k} = tmp(grid(k, i, j));   % extract landmark
-
-                        sel1 = grid(k, :, :) == grid(k, i, j);
-                        sel2 = zeros(size(grid, 2), size(grid, 3));
-                        sel2(:, :) = sel1(1, :, :);
-
-                        subgrid = grid(k, :, :);
-                        subgrid(sel1) = 0;
-                        
-                        grid(k, :, :) = subgrid;
-                        
-                        % update the z, H and R matrices
-                        land                    = landmark_list{k}{1};
-                        z(2*k-1:2*k)            = land.x;
-                        H(2*k-1:2*k, :)         = eye(2);
-                        R(2*k-1:2*k, 2*k-1:2*k) = land.P;
-
+                        sel1            = grid(k, :, :) == grid(k, i, j);
+                        subgrid         = grid(k, :, :);
+                        subgrid(sel1)   = 0;
+                        grid(k, :, :)   = subgrid;
                     end
-
-                    % BLUE estimation
-                    % new_candidate   = Landmark();
-                    % new_candidate.x = (H'*inv(R)*H)\(H'*inv(R)*z);
-                    % new_candidate.P = inv(H'*inv(R)*H);
-
-                    % if ~all(eig(new_candidate.P) > 0)
-                    %     fprintf('In find_candidates');
-                    %     error('The covariance matrix of the landmark is not positive definite');
-                    % end
-
                     
                     % add the landmark to the list of candidates
                     candidates = [candidates; obs_index];
@@ -362,8 +333,8 @@ methods
                 % map, then just disregard the candidate
                 % if mvnpdf(landmark.x, map.landmark_vector(j).x, map.landmark_vector(j).P) ...
                 %         > 0.99
-                if mvnpdf(map.landmark_vector(j).x, landmark.x, landmark.P) ...
-                        > 0.9
+                if mahalanobis_distance(map.landmark_vector(j).x, landmark.x, landmark.P) ...
+                        < 3
                     insert_to_map = false;
                     continue;
                 end
@@ -398,6 +369,8 @@ end % Laserscan class
 %   - landmarks:    the landmark vector in the map buffer 
 function grid = update_grid(grid, index, landmarks, conf)
 
+    grid(index, :, :) = zeros(size(grid, 2), size(grid, 3));
+
     for k = 1:length(landmarks)
 
         land = landmarks{k}; % extract the current landmark
@@ -416,8 +389,8 @@ function grid = update_grid(grid, index, landmarks, conf)
         for i = i_min:i_max 
             for j = j_min:j_max
                 [a,b]                  = grid_indexes_to_cartesian(i, j, conf);
-                point_in_grid       = (mvnpdf([a; b], land.x, land.P) > conf.threshold);
-                grid(index, i, j)   = k * point_in_grid;
+                point_in_grid          = mahalanobis_distance([a; b], land.x, land.P) < 3;
+                grid(index, i, j)      = k * point_in_grid;
             end
         end
     end
@@ -466,4 +439,10 @@ function [x, y] = grid_indexes_to_cartesian(i, j, conf)
 
     x = conf.LB_x + (i - 1) * conf.dx;
     y = conf.LB_y + (j - 1) * conf.dy;
+end
+
+
+% function that computes the mahalanobis distance
+function d = mahalanobis_distance(x, y, P)
+    d = sqrt((x - y)' * inv(P) * (x - y));  % eq (83)
 end

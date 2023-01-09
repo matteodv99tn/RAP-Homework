@@ -33,7 +33,7 @@ cov_robot = cell(N_laserscans,1);
 tmp = 0;
 tmp2 = 0;
 
-T_limit = 30;
+T_limit = N_laserscans;
 P_est_norm = zeros(T_limit, 1);
 
 disp('Starting the cycle')
@@ -107,14 +107,15 @@ for k = 1:T_limit
   fprintf('Done!\n');
 
   fprintf('Performing map update...');
-  new_features = map.update_map(robot, laserscans{k}.observations);
+  observation_to_add = laserscans{k}.observations(2:end-1);
+  new_features = map.update_map(robot, observation_to_add);
   fprintf('found %d new features\n', length(new_features));
 
   for i = 1:length(new_features)
     fprintf('Adding new feature #%2d (observation %d)... ', i, new_features(i));
 
     landmark_index = new_features(i);
-    obs = laserscans{k}.observations{landmark_index};
+    obs = observation_to_add{landmark_index};
     landmark = Landmark(robot, obs);
 
     P_LL      = landmark.P;                         % eq (35)

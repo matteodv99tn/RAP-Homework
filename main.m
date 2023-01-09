@@ -10,7 +10,7 @@ addpath('Classes')
 
 % Load the configuration parameters for the algorithms
 config
-
+    
 % Load the data
 load_precomputed_data = true;
 load_data
