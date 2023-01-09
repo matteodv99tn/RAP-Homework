@@ -36,12 +36,12 @@ methods
         obj.landmark_buffer = cell(1, obj.buffer_length);
         obj.buffer_i        = 1;
         obj.grid_configuration = struct( ...
-                'LB_x',         -20, ...   % lower bound for the x coordinate of the map
-                'UB_x',         20, ...    % upper bound for the x coordinate of the map
-                'LB_y',         -20, ...   % lower bound for the y coordinate of the map
-                'UB_y',         20, ...    % upper bound for the y coordinate of the map
-                'dx',           0.08, ...    % grid step size w.r.t. x
-                'dy',           0.08, ...    % grid step size w.r.t. y
+                'LB_x',         -25, ...   % lower bound for the x coordinate of the map
+                'UB_x',         25, ...    % upper bound for the x coordinate of the map
+                'LB_y',         -25, ...   % lower bound for the y coordinate of the map
+                'UB_y',         25, ...    % upper bound for the y coordinate of the map
+                'dx',           0.1, ...    % grid step size w.r.t. x
+                'dy',           0.1, ...    % grid step size w.r.t. y
                 'threshold',    0.2,...     % threshold for the occupancy grid
                 'max_sigma',    0.4 ...     % maximum value for the standard deviation of the 
                                     ...     % landmarks to be considered valid
