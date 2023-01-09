@@ -55,7 +55,7 @@ methods
                 'epsilon_expansion',    0.06, ...
                 'delta_expansion',      0.1, ...
                 'alpha_critic',         5, ...    
-                'L_min',                0.5, ...
+                'L_min',                0.8, ...
                 'N_min_check',          10 ...
             );
         
@@ -74,8 +74,8 @@ methods
         hold on;
         grid on;
 
-        for i = 1:length(obj.features)
-            plot(obj.features{i}(1, :), obj.features{i}(2, :), '-^g', ...
+        for i = 1:length(obj.features_all)
+            plot(obj.features_all(1, i), obj.features_all(2, i), '-^g', ...
             'MarkerEdgeColor', '#0072BD', 'MarkerSize', 10, 'LineWidth', 2);
         end
     end
@@ -352,7 +352,10 @@ methods
             end
 
             obj.features{end+1} = new_feature;
-            obj.features_all = [obj.features_all, new_feature];
+
+            new_feat = hidden_features(obj,new_feature,start_index,end_index);
+
+            obj.features_all = [obj.features_all, new_feat];
         end
     end
 
@@ -459,6 +462,30 @@ methods
     % overload of the predict_point function to work with laserscan index
     function res = predict_point(obj, line, i)
         res = predict_point(line, obj.polar(i, 2));
+    end
+
+    % delete features that are partially hidden
+    function new_feat = hidden_features(obj,new_feature,start_index,end_index)
+        dist_new_feature_start = sqrt(new_feature(1,1)^2 + new_feature(2,1)^2);
+        dist_new_feature_end = sqrt(new_feature(1,end)^2 + new_feature(2,end)^2);
+
+        if start_index ~= 1
+            dist_prev_point = sqrt(obj.cartesian(start_index - 1,1)^2 + obj.cartesian(start_index - 1,2)^2);
+        else
+            dist_prev_point = 1000;
+        end    
+
+        if end_index ~= 361
+            dist_next_point = sqrt(obj.cartesian(end_index + 1,1)^2 + obj.cartesian(end_index + 1,2)^2); 
+        else
+            dist_next_point = 1000;
+        end
+        tr = 0.1;
+        if (dist_new_feature_start - dist_prev_point) > tr * dist_new_feature_start || (dist_new_feature_end - dist_next_point) > tr * dist_new_feature_end
+            new_feat = [];
+        else
+            new_feat = new_feature;
+        end
     end
 
     end % methods
