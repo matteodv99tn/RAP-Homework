@@ -61,6 +61,7 @@ methods
         for i = 1:map.size()
             
             plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
+            hold on;
             plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
             hold on;
         end
