@@ -61,7 +61,7 @@ methods
         for i = 1:map.size()
             
             plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
-            plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.99,'b')
+            plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
             hold on;
         end
 
@@ -69,13 +69,14 @@ methods
         for i = 1:length(buffer_lands)-n_new
 
             plot(buffer_lands{i}.x(1), buffer_lands{i}.x(2), '+r');
-            plotErrorEllipse([buffer_lands{i}.x(1),buffer_lands{i}.x(2)], buffer_lands{i}.P, 0.99,'r')
+            plotErrorEllipse([buffer_lands{i}.x(1),buffer_lands{i}.x(2)], buffer_lands{i}.P, 0.95,'r')
             hold on;
 
         end
         for i = length(buffer_lands)-n_new+1:length(buffer_lands)
 
             plot(buffer_lands{i}.x(1), buffer_lands{i}.x(2), 'om');
+            plotErrorEllipse([buffer_lands{i}.x(1),buffer_lands{i}.x(2)], buffer_lands{i}.P, 0.95,'m')
             hold on;
 
         end

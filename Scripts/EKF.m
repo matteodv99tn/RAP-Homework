@@ -100,7 +100,7 @@ for k = 1:T_limit
   
   pos_robot{k,1} = x_est(1:3);
 
-
+  % Creating the map
   for i = 1:map.size()
     map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
     map.landmark_vector(i).P = P_est(3 + 2*i - 1:3 + 2*i, 3 + 2*i - 1:3 + 2*i);
@@ -134,6 +134,51 @@ for k = 1:T_limit
 
     check_covariance_matrix(P_est, 'Stacking a new landmark');
   end
+
+  % Deleting features that are too close
+  if map.size() > 1
+    for i = 4:2:(length(x_est) - 4)
+      for j = i+2:2:(length(x_est) -2)
+
+        dist = sqrt((x_est(i) - x_est(j))^2 + (x_est(i+1) - x_est(j+1))^2);
+   
+        if(dist < 0.1)
+
+          Pi = norm(P_est(i:i+1,i:i+1));
+          Pj = norm(P_est(j:j+1,j:j+1));
+        
+          if(Pi < Pj)
+            
+            x_est(j:j+1) = [];
+            P_est(j:j+1,:) = [];
+            P_est(:,j:j+1) = [];
+            
+          else
+
+            x_est(i:i+1) = [];
+            P_est(i:i+1,:) = [];
+            P_est(:,i:i+1) = [];
+
+          end
+          fprintf('Two features collapsed ****************************************\n');
+
+          % Re creating the map
+          for ss = 1:(map.size() - 1)
+            map.landmark_vector(ss).x = x_est(3 + 2*ss - 1:3 + 2*ss);
+            map.landmark_vector(ss).P = P_est(3 + 2*ss - 1:3 + 2*ss, 3 + 2*ss - 1:3 + 2*ss);
+            check_covariance_matrix(map.landmark_vector(ss).P, 'Copying landmark after update')
+          end
+          map.landmark_vector(ss+1) = [];
+          break;
+        end
+
+      end
+    end
+  end
+
+  
+
+
 
   figure(2),clf;
   plot(map, length(new_features));
