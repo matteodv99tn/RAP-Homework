@@ -99,6 +99,7 @@ for k = 1:T_limit
   P_est_norm(k) = norm(robot.P);
   
   pos_robot{k,1} = x_est(1:3);
+  cov_robot{k,1} = P_est(1:3,1:3);
 
   % Creating the map
   for i = 1:map.size()
@@ -111,8 +112,8 @@ for k = 1:T_limit
 
   fprintf('Performing map update...');
   observation_to_add = laserscans{k}.observations(2:end-1);
-  new_features = map.update_map(robot, observation_to_add);
-  % new_features = map.up_map(robot, observation_to_add);
+  % new_features = map.update_map(robot, observation_to_add);
+  new_features = map.up_map(robot, observation_to_add);
   fprintf('found %d new features\n', length(new_features));
 
   for i = 1:length(new_features)
@@ -143,7 +144,7 @@ for k = 1:T_limit
 
         dist = sqrt((x_est(i) - x_est(j))^2 + (x_est(i+1) - x_est(j+1))^2);
    
-        if(dist < 0.1)
+        if(dist < 0.80)
 
           Pi = norm(P_est(i:i+1,i:i+1));
           Pj = norm(P_est(j:j+1,j:j+1));
@@ -181,34 +182,54 @@ for k = 1:T_limit
 
 
 
-  figure(2),clf;
-  plot(map, length(new_features));
-  hold on
+   
+%   % plot(map, length(new_features));
+%   % hold on
+% 
+%   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
-  % for i = 1:map.size()
-            
-  %   plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
-  %   hold on;
-  %   plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
-  %   hold on;
-  % end
-  % hold on;
-  % for i = 1:length(new_features)
-  %   landmark_index = new_features(i);
-  %   obs = observation_to_add{landmark_index};
-  %   landmark = Landmark(robot, obs); 
-  %   plot(landmark.x(1), landmark.x(2), '*r');
-  %   hold on
-  %   plotErrorEllipse([landmark.x(1),landmark.x(2)], landmark.P, 0.95,'r');
-  %   hold on;
-  % end
+if rand(1) < 0.03 && map.size() > 10
+    figure(2),clf;
+    subplot(1,2,1);       
+    for i = 1:map.size()-10
+      plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
+      hold on;
+      plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
+      hold on;
+    end
+    for i = map.size()-10:map.size()
+      plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '.r');
+      hold on;
+      plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'r')
+      hold on;
+    end
+    plot(robot.x(1),robot.x(2),'og','MarkerSize',5,'Linewidth',2);
+    
+    
+    
+    
+    subplot(1,2,2);
+    plot(laserscans{k});
+
+
+    
+
+end
+%   for i = 1:length(new_features)
+%     landmark_index = new_features(i);
+%     obs = observation_to_add{landmark_index};
+%     landmark = Landmark(robot, obs); 
+%     plot(landmark.x(1), landmark.x(2), '*r');
+%     hold on
+%     plotErrorEllipse([landmark.x(1),landmark.x(2)], landmark.P, 0.95,'r');
+%     hold on;
+%   end
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  figure(3), clf;
-  plot(laserscans{k});
-  
-  figure(4), clf;
-  plot(P_est_norm);
+%   figure(3), clf;
+%   plot(laserscans{k});
+%   
+%   figure(4), clf;
+%   plot(P_est_norm);
 
 end
 
