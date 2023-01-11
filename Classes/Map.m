@@ -33,7 +33,7 @@ methods
 
     function obj = Map() % constructor
         
-        obj.buffer_length   = 10;
+        obj.buffer_length   = 30;
         %obj.landmark_buffer = cell(1, obj.buffer_length);
         obj.landmark_buffer = cell(1, 0);
         obj.distances = cell(1, 0);
@@ -244,115 +244,128 @@ methods
     % If from the first to the last element of the buffer
     % there exists a chain of small distances then a new feature is added in the map
     function nw_land = up_map(map,robot, observation_new)
-        buffer_max = map.buffer_length;
         nw_land = []; 
-        tmp = map.landmark_buffer;
-        tmp1 = map.distances;
-
-        % create the vector of landmark from observations
-        for i = 1:length(observation_new)
-            landmark_observed(i) = Landmark(robot, observation_new{i}); % vector
-        end
-
-        % shifting the buffer of landmark
-        for i = 1:length(tmp)
-            map.landmark_buffer{i+1} = tmp{i};  
-        end
-        map.landmark_buffer{1} = landmark_observed;
-
-        % shifting the buffer of distances
-        if length(map.landmark_buffer) > 1
-            for i = 1:length(tmp1)
-                map.distances{i+1} = tmp1{i};
+        if length(observation_new) > 0
+            buffer_max = map.buffer_length;
+            tmp = map.landmark_buffer;
+            tmp1 = map.distances;
+    
+            % create the vector of landmark from observations
+            for i = 1:length(observation_new)
+                landmark_observed(i) = Landmark(robot, observation_new{i}); % vector
             end
-        end
-        map.distances{1} = [];
-
-        
-        
-        % creating the matrix of distances
-        % new element: | 1| 2| 3| 4|
-        % previous element: | 1| 2|
-        % in the matrix distances of 1 there are 4 raws and 2 colums
-        % d11 d12
-        % d21 d22
-        % d31 d32
-        % d41 d42
-        % When the distances are computed the index of the most probable connection is stored for each raw
-        % So I can reconstruct a chain of connection
-        % I save the index in the last column of the matrix with a minus (easy to extract)
-        if length(map.landmark_buffer) > 1
-            for i = 1:size(map.landmark_buffer{1},2)
-                for j = 1:(size(map.landmark_buffer{2},2))
-                    map.distances{1}(i,j) = mahalanobis_distance(map.landmark_buffer{1}(i).x,map.landmark_buffer{2}(j).x,map.landmark_buffer{1}(i).P);
-                   
-                end
-                [minn,indexmin] = min(map.distances{1}(i,1:length(map.landmark_buffer{2})));
-         
-
-                if minn < 2 % treshold of distance
-                    map.distances{1}(i,length(map.landmark_buffer{2})+1) = -indexmin;
-                else
-                    map.distances{1}(i,length(map.landmark_buffer{2})+1) = 0;
-                end
-
-                
+    
+            % shifting the buffer of landmark
+            for i = 1:length(tmp)
+                map.landmark_buffer{i+1} = tmp{i};  
             end
-                
-        end
-      
-        % for each row of the distances of the first layer I have to
-        % check if there is a chain up to the last layer simply following
-        % the most probable connection stored before in the index
-        raw = 1;
-        if length(map.landmark_buffer) > buffer_max
-            for j = 1:size(map.distances{1},1)
-                for i = 1:buffer_max-1
-                    % If the element is negative I can pass to the second layer
-                    if map.distances{i}(raw,end) < 0
-                        % The raw of the next layer is the index stored in the matrix distances
-                        raw = -map.distances{i}(raw,end);
-                        if raw == 0 % If raw == 0 => no connection
-                            break;
-                        end
-                        if i == buffer_max - 1                          
-                            nw_land = [nw_land,j]; % If I have a connection up to the last layer I add to the map
-                            raw = j + 1;
-                        end
-
-                    else
-                        
-                        break;
-                        raw = j + 1; % If no connection I restart from the next raw of the first layer
+            map.landmark_buffer{1} = landmark_observed;
+    
+            % shifting the buffer of distances
+            if length(map.landmark_buffer) > 1
+                for i = 1:length(tmp1)
+                    map.distances{i+1} = tmp1{i};
+                end
+            end
+            map.distances{1} = [];
+    
+            
+            
+            % creating the matrix of distances
+            % new element: | 1| 2| 3| 4|
+            % previous element: | 1| 2|
+            % in the matrix distances of 1 there are 4 raws and 2 colums
+            % d11 d12
+            % d21 d22
+            % d31 d32
+            % d41 d42
+            % When the distances are computed the index of the most probable connection is stored for each raw
+            % So I can reconstruct a chain of connection
+            % I save the index in the last column of the matrix with a minus (easy to extract)
+            if length(map.landmark_buffer) > 1
+                for i = 1:size(map.landmark_buffer{1},2)
+                    for j = 1:(size(map.landmark_buffer{2},2))
+                        map.distances{1}(i,j) = mahalanobis_distance(map.landmark_buffer{1}(i).x,map.landmark_buffer{2}(j).x,map.landmark_buffer{1}(i).P);
+                       
                     end
+                    [minn,indexmin] = min(map.distances{1}(i,1:length(map.landmark_buffer{2})));
+                    
+                    
+    
+                    if minn < 1 % treshold of distance
+                        map.distances{1}(i,length(map.landmark_buffer{2})+1) = -indexmin;
+                
+                    else
+                        map.distances{1}(i,length(map.landmark_buffer{2})+1) = 0;
+                    end
+    
                     
                 end
+                    
             end
-        end
-        % Deleting the element outside the buffer
-        if length(map.landmark_buffer) > buffer_max
-            map.landmark_buffer(end) = [];
-            map.distances(end) = [];
-        end
-        % Controlling to insert really new features
-        tmp3 =0;
-        for i = 1:map.size()
-            for j = 1:length(nw_land)
-                if mahalanobis_distance(map.landmark_vector(i).x,landmark_observed(nw_land(j)).x,map.landmark_vector(i).P) < 2 
-                    tmp3(i) = nw_land(j);
+          
+            % for each row of the distances of the first layer I have to
+            % check if there is a chain up to the last layer simply following
+            % the most probable connection stored before in the index
+            raw = 1;
+            if length(map.landmark_buffer) > buffer_max
+                
+                for j = 1:size(map.distances{1},1)
+                    for i = 1:buffer_max-1
+                        % If the element is negative I can pass to the second layer
+                        if raw > size(map.distances{1},1)
+                            break;
+                        end
+                        if map.distances{i}(raw,end) < 0
+                            % The raw of the next layer is the index stored in the matrix distances
+                            raw = -map.distances{i}(raw,end);
+                            
+                            if raw == 0 % If raw == 0 => no connection
+                                break;
+                            end
+                            if i == buffer_max - 1  
+                                if mahalanobis_distance(map.landmark_buffer{1}(j).x,map.landmark_buffer{buffer_max}(raw).x,map.landmark_buffer{1}(j).P) < 1                     
+                                    nw_land = [nw_land,j]; % If I have a connection up to the last layer I add to the map
+                                end
+
+                                raw = j + 1;
+                            end
+    
+                        else
+                            
+                            break;
+                            raw = j + 1; % If no connection I restart from the next raw of the first layer
+                        end
+                        
+                    end
                 end
             end
-        end
-        for i = 1:length(tmp3)
-            irem = nw_land == tmp3(i);
+            % Deleting the element outside the buffer
+            if length(map.landmark_buffer) > buffer_max
+                map.landmark_buffer(end) = [];
+                map.distances(end) = [];
+            end
+            % Controlling to insert really new features
+            tmp3 = 0;
+            landmark_observed1 = landmark_observed(nw_land);
+    
+            for i = 1:map.size()
+                for j = 1:length(nw_land)
+                    if mahalanobis_distance(map.landmark_vector(i).x,landmark_observed1(j).x,map.landmark_vector(i).P) < 0.2 
+                        tmp3(j) = nw_land(j);
+                    end
+                end
+            end
+            for i = 1:length(tmp3)
+                irem = nw_land == tmp3(i);
+                nw_land(irem) = [];
+            end
+            irem = nw_land == 0;
             nw_land(irem) = [];
-        end
-        irem = nw_land == 0;
-        nw_land(irem) = [];
-        
-        map.landmark_vector = [map.landmark_vector; landmark_observed(nw_land)'];
+            
+            map.landmark_vector = [map.landmark_vector; landmark_observed(nw_land)'];
 
-        
+        end
     end
 
 %  ____       _            _         __  __                _                   
