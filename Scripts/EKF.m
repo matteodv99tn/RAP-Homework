@@ -112,6 +112,7 @@ for k = 1:T_limit
   fprintf('Performing map update...');
   observation_to_add = laserscans{k}.observations(2:end-1);
   new_features = map.update_map(robot, observation_to_add);
+  % new_features = map.up_map(robot, observation_to_add);
   fprintf('found %d new features\n', length(new_features));
 
   for i = 1:length(new_features)
@@ -183,7 +184,26 @@ for k = 1:T_limit
   figure(2),clf;
   plot(map, length(new_features));
   hold on
-  
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+  % for i = 1:map.size()
+            
+  %   plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
+  %   hold on;
+  %   plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
+  %   hold on;
+  % end
+  % hold on;
+  % for i = 1:length(new_features)
+  %   landmark_index = new_features(i);
+  %   obs = observation_to_add{landmark_index};
+  %   landmark = Landmark(robot, obs); 
+  %   plot(landmark.x(1), landmark.x(2), '*r');
+  %   hold on
+  %   plotErrorEllipse([landmark.x(1),landmark.x(2)], landmark.P, 0.95,'r');
+  %   hold on;
+  % end
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   figure(3), clf;
   plot(laserscans{k});
   
@@ -202,4 +222,16 @@ function check_covariance_matrix(P, text)
     end
     error('The covariance matrix of the observation is not positive definite');
   end
+end
+
+function plotErrorEllipse(mu, Sigma, p, color)
+
+s = -2 * log(1 - p);
+
+[V, D] = eig(Sigma * s);
+
+t = linspace(0, 2 * pi);
+a = (V * sqrt(D)) * [cos(t(:))'; sin(t(:))'];
+
+plot(a(1, :) + mu(1), a(2, :) + mu(2),color);
 end
