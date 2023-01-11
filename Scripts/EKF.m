@@ -188,33 +188,33 @@ for k = 1:T_limit
 % 
 %   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 
-if rand(1) < 0.03 && map.size() > 10
-    figure(2),clf;
-    subplot(1,2,1);       
-    for i = 1:map.size()-10
-      plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
-      hold on;
-      plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
-      hold on;
-    end
-    for i = map.size()-10:map.size()
-      plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '.r');
-      hold on;
-      plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'r')
-      hold on;
-    end
+  if rand(1) < 0.01 && map.size() > 10
+      figure(2),clf;
+      subplot(1,2,1);       
+      for i = 1:map.size()-10
+        plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
+        hold on;
+        plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
+        hold on;
+      end
+      for i = map.size()-10:map.size()
+        plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '.r');
+        hold on;
+        plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'r')
+        hold on;
+      end
     plot(robot.x(1),robot.x(2),'og','MarkerSize',5,'Linewidth',2);
-    
-    
-    
-    
+      
+      
+      
+      
     subplot(1,2,2);
     plot(laserscans{k});
 
 
-    
+      
 
-end
+  end
 %   for i = 1:length(new_features)
 %     landmark_index = new_features(i);
 %     obs = observation_to_add{landmark_index};

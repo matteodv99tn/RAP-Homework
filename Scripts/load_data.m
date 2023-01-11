@@ -18,8 +18,8 @@ if load_precomputed_data && exist('ProcessedData/laserscans.mat', 'file')
 
 else % must build the file
     
-    fprintf('Generating laserscan data from Data/simul_LASER_LASER_SIM_2.txt\n');
-    laserscan_data  = readmatrix('simul_LASER_LASER_SIM_2.txt');
+    fprintf('Generating laserscan data from Data/simul_LASER_LASER_SIM_1.txt\n');
+    laserscan_data  = readmatrix('simul_LASER_LASER_SIM_1.txt');
     N_laserscans    = size(laserscan_data, 1);
     laserscans      = cell(1, N_laserscans);
     fprintf('Number of laserscans: %d\n', N_laserscans);
@@ -68,8 +68,8 @@ if load_precomputed_data && exist('ProcessedData/odometries.mat', 'file')
 
 else % must build the file
     
-    fprintf('Generating odometry data from Data/simul_ODO_2.txt\n');
-    odometry_data   = readmatrix('simul_ODO_2.txt');
+    fprintf('Generating odometry data from Data/simul_ODO_1.txt\n');
+    odometry_data   = readmatrix('simul_ODO_1.txt');
     N_odometries    = size(odometry_data, 1);
     odometries      = cell(1, N_odometries);
     fprintf('Number of odometry entries: %d\n', N_laserscans);
@@ -106,8 +106,8 @@ else % must build the file
     
     fprintf('Generating time vectors from Data/simul_LASER_LASER_SIM_times.txt ');
     fprintf('and Data/simul_ODO_times.txt\n');
-    laserscans_times    = readmatrix('simul_LASER_LASER_SIM_times_2.txt');
-    odometries_times    = readmatrix('simul_ODO_times_2.txt');
+    laserscans_times    = readmatrix('simul_LASER_LASER_SIM_times_1.txt');
+    odometries_times    = readmatrix('simul_ODO_times_1.txt');
     dt_laserscans       = mean(laserscans_times(2:end) - laserscans_times(1:end-1));
     dt_odometries       = mean(odometries_times(2:end) - odometries_times(1:end-1));
     dt                  = mean([dt_laserscans, dt_odometries]);
