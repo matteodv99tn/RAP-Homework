@@ -33,7 +33,7 @@ methods
 
     function obj = Map() % constructor
         
-        obj.buffer_length   = 30;
+        obj.buffer_length   = 15;
         %obj.landmark_buffer = cell(1, obj.buffer_length);
         obj.landmark_buffer = cell(1, 0);
         obj.distances = cell(1, 0);
@@ -292,7 +292,7 @@ methods
                     
                     
     
-                    if minn < 1 % treshold of distance
+                    if minn < 0.5 % treshold of distance
                         map.distances{1}(i,length(map.landmark_buffer{2})+1) = -indexmin;
                 
                     else
