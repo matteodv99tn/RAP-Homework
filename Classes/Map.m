@@ -33,7 +33,7 @@ methods
 
     function obj = Map() % constructor
         
-        obj.buffer_length   = 15;
+        obj.buffer_length   = 20;
         %obj.landmark_buffer = cell(1, obj.buffer_length);
         obj.landmark_buffer = cell(1, 0);
         obj.distances = cell(1, 0);
@@ -158,6 +158,8 @@ methods
         P2 = [];
 
         landmarks = map.landmark_vector;
+
+        
 
         for i = 1:length(observation_vector)
             absolute_observation = Landmark(robot, observation_vector{i});
@@ -292,7 +294,7 @@ methods
                     
                     
     
-                    if minn < 0.5 % treshold of distance
+                    if minn < 0.4 % treshold of distance
                         map.distances{1}(i,length(map.landmark_buffer{2})+1) = -indexmin;
                 
                     else
@@ -324,7 +326,7 @@ methods
                                 break;
                             end
                             if i == buffer_max - 1  
-                                if mahalanobis_distance(map.landmark_buffer{1}(j).x,map.landmark_buffer{buffer_max}(raw).x,map.landmark_buffer{1}(j).P) < 1                     
+                                if mahalanobis_distance(map.landmark_buffer{1}(j).x,map.landmark_buffer{buffer_max}(raw).x,map.landmark_buffer{1}(j).P) < 0.5                    
                                     nw_land = [nw_land,j]; % If I have a connection up to the last layer I add to the map
                                 end
 

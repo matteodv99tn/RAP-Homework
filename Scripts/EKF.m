@@ -53,15 +53,16 @@ for k = 1:T_limit
   N             = odometries{k}.Q;
   
   
-  % Prediction
+  % KF Prediction ------------------------------------------------------
   fprintf('Prediction...');
   x_est(1:3) = robot.update_step(odometries{k});
   P_est = F_X*P_est*F_X' + F_N*N*F_N';
   fprintf('Done!\n');
   check_covariance_matrix(P_est, 'After prediction');
 
-  fprintf('Copying states from EKF to map...');
+  robot.x = x_est(1:3); % IS IT CORRECT ???????????????????????
   robot.P = P_est(1:3, 1:3);
+  fprintf('Copying states from EKF to map...');
   for i = 1:map.size()
     map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
     map.landmark_vector(i).P = P_est(3 + 2*i - 1:3 + 2*i, 3 + 2*i - 1:3 + 2*i);
@@ -71,6 +72,8 @@ for k = 1:T_limit
   tmp = eig(P_est);
   tmp2 = diag(P_est);
   
+
+  % KF update -----------------------------------------------------------
   % Update if the map is not empty
   if map.size() > 0
 
@@ -94,13 +97,6 @@ for k = 1:T_limit
   % Update the map
 
   fprintf('Copying states from EKF to map...');
-  robot.x = x_est(1:3);
-  robot.P = P_est(1:3, 1:3);
-  P_est_norm(k) = norm(robot.P);
-  
-  pos_robot{k,1} = x_est(1:3);
-  cov_robot{k,1} = P_est(1:3,1:3);
-
   % Creating the map
   for i = 1:map.size()
     map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
@@ -108,6 +104,14 @@ for k = 1:T_limit
 
     check_covariance_matrix(map.landmark_vector(i).P, 'Copying landmark after update')
   end
+
+  robot.x = x_est(1:3);
+  robot.P = P_est(1:3, 1:3);
+  P_est_norm(k) = norm(robot.P);
+  
+  pos_robot{k,1} = x_est(1:3);
+  cov_robot{k,1} = P_est(1:3,1:3);
+
   fprintf('Done!\n');
 
   fprintf('Performing map update...');
@@ -144,7 +148,7 @@ for k = 1:T_limit
 
         dist = sqrt((x_est(i) - x_est(j))^2 + (x_est(i+1) - x_est(j+1))^2);
    
-        if(dist < 0.80)
+        if(dist < 1)
 
           Pi = norm(P_est(i:i+1,i:i+1));
           Pj = norm(P_est(j:j+1,j:j+1));
@@ -188,8 +192,9 @@ for k = 1:T_limit
 % 
 %   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 
-  if rand(1) < 0.01 && map.size() > 10
+  if rand(1) < 0.05 && map.size() > 10
       figure(2),clf;
+      %set(gcf, 'Position', get(0, 'Screensize'));
       subplot(1,2,1);       
       for i = 1:map.size()-10
         plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
