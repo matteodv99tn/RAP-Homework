@@ -192,25 +192,31 @@ for k = 1:T_limit
 % 
 %   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 
-  if rand(1) < 0.05 && map.size() > 10
+  if rand(1) < 0.05
       figure(2),clf;
       %set(gcf, 'Position', get(0, 'Screensize'));
       subplot(1,2,1);       
-      for i = 1:map.size()-10
+      for i = 1:map.size()
         plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
+        axis equal
         hold on;
         plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
         hold on;
       end
-      for i = map.size()-10:map.size()
-        plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '.r');
-        hold on;
-        plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'r')
-        hold on;
+      hold on
+      for i = 1:length(laserscans{k}.observations)
+      
+        plot(Landmark(robot,laserscans{k}.observations{i}).x(1),Landmark(robot,laserscans{k}.observations{i}).x(2),'or')
+        hold on
       end
-    plot(robot.x(1),robot.x(2),'og','MarkerSize',5,'Linewidth',2);
-      
-      
+      plot(robot.x(1),robot.x(2),'og','MarkerSize',5,'Linewidth',2);
+      hold on
+
+      ang=-pi/2:0.2:pi/2; 
+      xc=5*cos(ang+robot.x(3));
+      yc=5*sin(ang+robot.x(3));
+      plot(robot.x(1)+xc,robot.x(2)+yc,'.g','Linewidth',1);
+
       
       
     subplot(1,2,2);

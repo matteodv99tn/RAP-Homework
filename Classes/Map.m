@@ -159,7 +159,7 @@ methods
 
         landmarks = map.landmark_vector;
 
-        
+
 
         for i = 1:length(observation_vector)
             absolute_observation = Landmark(robot, observation_vector{i});
@@ -228,6 +228,11 @@ methods
         map.grid = grids;
     
     end
+    
+    % When I see a new observation, I project it into landmark.
+    % Because of the drift the set of new landmark doesn't overlapp the old features
+    % I can compute the centroids of the new features and 
+
 
     function loop_closure(map, observation_vector)
         %% TODO
