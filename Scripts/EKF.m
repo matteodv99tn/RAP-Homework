@@ -194,16 +194,25 @@ for k = 1:T_limit
 
   if rand(1) < 0.05
       figure(2),clf;
-      %set(gcf, 'Position', get(0, 'Screensize'));
-      subplot(1,2,1);       
-      for i = 1:map.size()
-        plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
-        axis equal
-        hold on;
-        plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
-        hold on;
-      end
-      hold on
+      % set(gcf, 'Position', get(0, 'Screensize'));
+      % subplot(1,2,1);       
+      % for i = 1:map.size()
+      %   plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
+      %   axis equal
+      %   hold on;
+      %   plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
+      %   hold on;
+      % end
+      % hold on
+      % for i = 1:length(laserscans{k}.observations)
+      
+      %   plot(Landmark(robot,laserscans{k}.observations{i}).x(1),Landmark(robot,laserscans{k}.observations{i}).x(2),'or')
+      %   hold on
+      % end
+      % plot(robot.x(1),robot.x(2),'og','MarkerSize',5,'Linewidth',2);
+      % hold on
+
+      
       for i = 1:length(laserscans{k}.observations)
       
         plot(Landmark(robot,laserscans{k}.observations{i}).x(1),Landmark(robot,laserscans{k}.observations{i}).x(2),'or')
@@ -212,15 +221,44 @@ for k = 1:T_limit
       plot(robot.x(1),robot.x(2),'og','MarkerSize',5,'Linewidth',2);
       hold on
 
-      ang=-pi/2:0.2:pi/2; 
-      xc=5*cos(ang+robot.x(3));
-      yc=5*sin(ang+robot.x(3));
-      plot(robot.x(1)+xc,robot.x(2)+yc,'.g','Linewidth',1);
+      [a,b,c,d,maxx,maxy] = compute_boundaries(map,robot,laserscans{k}.observations);
+      inside_rect = old_landmark_inside_rectangle(map,robot,laserscans{k}.observations,maxx,maxy);
+      
+      plot(a(1),a(2),'+g','MarkerSize',3,'Linewidth',5);
+      hold on
+      plot(b(1),b(2),'+g','MarkerSize',3,'Linewidth',5);
+      hold on
+      plot(c(1),c(2),'+g','MarkerSize',3,'Linewidth',5);
+      hold on
+      plot(d(1),d(2),'+g','MarkerSize',3,'Linewidth',5);
+      hold on
+      
+      for i = 1:length(inside_rect)
+        plot(map.landmark_vector(inside_rect(i)).x(1), map.landmark_vector(inside_rect(i)).x(2), '^k');
+        axis equal
+        % hold on;
+        % plotErrorEllipse([map.landmark_vector(inside_rect(i)).x(1), map.landmark_vector(inside_rect(i)).x(2)], map.landmark_vector(inside_rect(i)).P, 0.95,'k')
+        hold on;
+      end
+      hold on;
+
+      for i = 1:map.size()
+        if length(find(inside_rect == 1)) == 0
+            plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
+            axis equal
+            hold on;
+        else
+            continue;
+        end
+        %plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
+        %hold on;
+      end
+      
 
       
       
-    subplot(1,2,2);
-    plot(laserscans{k});
+    % subplot(1,2,2);
+    % plot(laserscans{k});
 
 
       

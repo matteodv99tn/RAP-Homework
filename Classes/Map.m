@@ -152,52 +152,58 @@ methods
     % landmarks in the map, taking in account of the covariances.
     % If 2 observations are associated to the same landmark, the best association is chosen
     function [P1, P2] = compute_correspondences(map, robot, observation_vector)
-
+        is_closed = false;
         % Initialization:
         P1 = [];
         P2 = [];
 
         landmarks = map.landmark_vector;
-
-
-
-        for i = 1:length(observation_vector)
-            absolute_observation = Landmark(robot, observation_vector{i});
-            % absolute_observation = robot.observation_to_landmark(observation_vector(i));
-            for j = 1:length(landmarks)
-                % pdf_land_j = mvnpdf(absolute_observation.x, landmarks(j).x, landmarks(j).P);
-                % Compute mahalanobis distance between the observation and the landmark
-                % (the mahalanobis distance is a measure of the distance between two multivariate
-                % normal distributions)
-                d_obs_land = mahalanobis_distance(absolute_observation.x, landmarks(j).x, landmarks(j).P);
-                if d_obs_land < 2
-                    index = find(P2==j);
-                    if length(index) > 0
-                        % If the landmark is already associated to another observation, then
-                        % we choose the best association (the one with the highest probability)
-                        X1 = absolute_observation.x;
-                        X2 = landmarks(P2(index)).x;
-                        X3 = landmarks(P2(index)).P;
-                        d_obs_land_2 = mahalanobis_distance(X1, X2, X3);
-                        if d_obs_land_2 < d_obs_land
-                            continue;
-                        else
-                            P1(index) = [];
-                            P2(index) = [];
-
-                            disp('WARNING -> two observation are associated to the same landmark');
-
-                        end
-                    end
-                    P1 = [P1; i];
-                    P2 = [P2; j];
-                end
-            end
+        
+        if map.size() > 2*length(observation_vector)
+            [Pone,Ptwo,is_closed] = loop_closure(map, observation_vector, robot);
+            P1 = Pone;
+            P2 = Ptwo;
         end
 
-        if(length(P1) ~= length(P2))
-            error([ 'The number of correspondences is not the same for P1 and P2,',
-                    ' could not compute the innovation vector']);
+        if is_closed == false
+            for i = 1:length(observation_vector)
+                absolute_observation = Landmark(robot, observation_vector{i});
+                % absolute_observation = robot.observation_to_landmark(observation_vector(i));
+                for j = 1:length(landmarks)
+                    % pdf_land_j = mvnpdf(absolute_observation.x, landmarks(j).x, landmarks(j).P);
+                    % Compute mahalanobis distance between the observation and the landmark
+                    % (the mahalanobis distance is a measure of the distance between two multivariate
+                    % normal distributions)
+                    d_obs_land = mahalanobis_distance(absolute_observation.x, landmarks(j).x, landmarks(j).P);
+                    if d_obs_land < 2
+                        index = find(P2==j);
+                        if length(index) > 0
+                            % If the landmark is already associated to another observation, then
+                            % we choose the best association (the one with the highest probability)
+                            X1 = absolute_observation.x;
+                            X2 = landmarks(P2(index)).x;
+                            X3 = landmarks(P2(index)).P;
+                            d_obs_land_2 = mahalanobis_distance(X1, X2, X3);
+                            if d_obs_land_2 < d_obs_land
+                                continue;
+                            else
+                                P1(index) = [];
+                                P2(index) = [];
+    
+                                disp('WARNING -> two observation are associated to the same landmark');
+    
+                            end
+                        end
+                        P1 = [P1; i];
+                        P2 = [P2; j];
+                    end
+                end
+            end
+    
+            if(length(P1) ~= length(P2))
+                error([ 'The number of correspondences is not the same for P1 and P2,',
+                        ' could not compute the innovation vector']);
+            end
         end
     
     end
@@ -233,9 +239,119 @@ methods
     % Because of the drift the set of new landmark doesn't overlapp the old features
     % I can compute the centroids of the new features and 
 
+    % CHIAMARE LA FUNZIONE CONTROLLANDO LA LUNGHEZZA DELL MAPPA > 2*lenght(observation_vector)+1
+    function [P1,P2,is_closed] = loop_closure(map, observation_vector, robot)
+        P1 = [];
+        P2 = [];
+        is_closed = false;
+        landmarks = map.landmark_vector;
+        maxx = 0;
+        maxy = 0;
+        sumx = 0;
+        sumy = 0;
+        absolute_obs_vector = cell(1,length(observation_vector));
+        x_obs = zeros(1,length(observation_vector));
+        y_obs = x_obs;
 
-    function loop_closure(map, observation_vector)
-        %% TODO
+        % Creating the boundaries for the controlling area
+        for i = 1:length(observation_vector)
+            if observation_vector{i}.z(1) > maxx
+                maxx = observation_vector{i}.z(1);
+            end
+            if abs(observation_vector{i}.z(2)) > maxy
+                maxy = abs(observation_vector{i}.z(2));
+            end
+            absolute_obs_vector{i} = Landmark(robot,observation_vector{i});
+            sumx = sumx + absolute_obs_vector{i}.x(1);
+            sumy = sumy + absolute_obs_vector{i}.x(2);
+        end   
+        % Computing the centroid of the observations
+        centroid_obs = [sumx;sumy]./length(observation_vector);
+        % Finding the landmarks inside the rectangle
+        land_inside = old_landmark_inside_rectangle(map,robot,observation_vector,maxx,maxy);
+
+        sumx = 0;
+        sumy = sumx;
+        % Controlling if there are landmark in the controlling area
+        if length(land_inside) > floor(length(observation_vector)*0.8)
+            for i = 1:length(land_inside)
+                sumx = sumx + map.landmark_vector(land_inside(i)).x(1);
+                sumy = sumy + map.landmark_vector(land_inside(i)).x(2);
+            end
+        else
+            fprintf('NOT ENOUGH LANDMARK IN THE AREA\n');
+            return;
+        end
+        % Computing the centroid landmark
+        centroid_land = [sumx;sumy]./length(land_inside);
+
+        delta_centroids = centroid_land - centroid_obs;
+        % Defining the maximum rotation for correspondence
+        max_rot = 15;
+        theta_testup = rand(1,10)*max_rot;
+        theta_testdown = - rand(1,10)*max_rot;
+        theta_test = [theta_testup, theta_testdown];
+
+        
+        % For each angle
+        for j = 1:length(theta_test)
+            % For each observations
+            for i = 1:length(absolute_obs_vector)
+                
+                % Translating and rotating the observations into the landmarks
+                dist_point_centroid = point_point_distance(absolute_obs_vector{i}.x,centroid_obs);
+                angle_observations = atan2(absolute_obs_vector{i}.x(2),absolute_obs_vector{i}.x(1)); % alpha
+                
+                origin_new_x = absolute_obs_vector{i}.x(1) + delta_centroids(1); 
+                origin_new_y = absolute_obs_vector{i}.x(2) + delta_centroids(2);
+            
+                absolute_obs_vector{i}.x(1) = origin_new_x + dist_point_centroid*cos(angle_observations + theta_test(j));
+                absolute_obs_vector{i}.x(2) = origin_new_y + dist_point_centroid*sin(angle_observations + theta_test(j));
+                % For each landmark in the rectangle
+                for k = 1:length(land_inside)
+                    
+                    d_obs_land = mahalanobis_distance(absolute_obs_vector{i}.x, landmarks(land_inside(k)).x, landmarks(land_inside(k)).P);
+                    if d_obs_land < 3
+                        index = find(P2==land_inside(k));
+                        if length(index) > 0
+                            % If the landmark is already associated to another observation, then
+                            % we choose the best association (the one with the highest probability)
+                            X1 = absolute_obs_vector{i}.x;
+                            X2 = landmarks(P2(index)).x;
+                            X3 = landmarks(P2(index)).P;
+                            d_obs_land_2 = mahalanobis_distance(X1, X2, X3);
+                            if d_obs_land_2 < d_obs_land
+                                continue;
+                            else
+                                P1(index) = [];
+                                P2(index) = [];
+    
+                                disp('WARNING -> two observation are associated to the same landmark');
+    
+                            end
+                        end
+                        P1 = [P1; i];
+                        P2 = [P2; land_inside(k)];
+                    end
+                end
+            end
+        end
+
+        if(length(P1) ~= length(P2))
+            error([ 'The number of correspondences is not the same for P1 and P2,',
+                    ' could not compute the innovation vector']);
+        end
+        
+        if length(P1) >= floor(length(observation_vector)*0.8)
+            is_closed = true;
+            fprintf('DETECTED LOOP\n');
+
+            pause();
+        else
+            P1 = [];
+            P2 = P1;
+        end
+
         
     end
 
@@ -244,6 +360,53 @@ methods
     function dim = size(map)
         dim = length(map.landmark_vector);
     end
+
+
+    function [A,B,C,D,maxx,maxy] = compute_boundaries(map,robot,observation_vector)
+        xr = robot.x(1);
+        yr = robot.x(2);
+        tr = robot.x(3);
+        maxx = 0;
+        maxy = 0;
+         for i = 1:length(observation_vector)
+            if observation_vector{i}.z(1) > maxx
+                maxx = observation_vector{i}.z(1);
+            end
+            if abs(observation_vector{i}.z(2)) > maxy
+                maxy = abs(observation_vector{i}.z(2));
+            end
+         end
+        A = [xr + maxy*sin(tr);yr - maxy*cos(tr)];
+        D = [xr - maxy*sin(tr);yr + maxy*cos(tr)];
+        B = [A(1) + maxx*cos(tr),A(2) + maxx*sin(tr)];
+        C = [D(1) + maxx*cos(tr),D(2) + maxx*sin(tr)];
+
+    end
+    % Given the map and the robot gives the landmark near the robot
+    function land_inside = old_landmark_inside_rectangle(map,robot,observation_vector,radiuspar,radiusper)
+
+        element_deleted = 2*length(observation_vector);
+
+        land_inside = [];
+        xr = robot.x(1);
+        yr = robot.x(2);
+        tr = robot.x(3);
+
+        for i = 1:map.size() - element_deleted + 1
+            [land_local,~,~] = landmark_to_observation(robot, map.landmark_vector(i));
+            if land_local(1) > 0 && land_local(1) < radiuspar
+                if land_local(2) > -radiusper && land_local(2) < radiusper
+                    land_inside = [land_inside;i];
+                end
+            end
+        
+            
+
+        end
+
+    end
+
+    
 
 
     % Alternative to the grid map.
