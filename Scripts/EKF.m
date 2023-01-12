@@ -192,7 +192,7 @@ for k = 1:T_limit
 % 
 %   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 
-  if rand(1) < 0.05
+  if rand(1) < 0.03 && k > 12000
       figure(2),clf;
       % set(gcf, 'Position', get(0, 'Screensize'));
       % subplot(1,2,1);       
@@ -243,16 +243,17 @@ for k = 1:T_limit
       hold on;
 
       for i = 1:map.size()
-        if length(find(inside_rect == 1)) == 0
+        if length(find(inside_rect == i)) == 0
             plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
             axis equal
             hold on;
         else
             continue;
         end
-        %plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
-        %hold on;
+        plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
+        hold on;
       end
+      
       
 
       
