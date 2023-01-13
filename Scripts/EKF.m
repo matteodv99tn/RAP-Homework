@@ -22,7 +22,7 @@
 %         H(k+1) is the jacobian of hk+1(x,epsilon) w.r.t the state e and evaluated in the x_est(k+1) and epsilon = 0
 
 robot = Robot();
-map   = Map();
+map   = Map(map_param);
 
 x_est = zeros(3, 1);
 P_est = zeros(3, 3);
@@ -60,8 +60,9 @@ for k = 1:T_limit
   fprintf('Done!\n');
   check_covariance_matrix(P_est, 'After prediction');
 
-  robot.x = x_est(1:3); % IS IT CORRECT ???????????????????????
+  robot.x = x_est(1:3);
   robot.P = P_est(1:3, 1:3);
+
   fprintf('Copying states from EKF to map...');
   for i = 1:map.size()
     map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
@@ -83,9 +84,10 @@ for k = 1:T_limit
     S = H_X*P_est*H_X' + R;
     W = P_est*H_X'*inv(S);
     x_est = x_est + W*z;
-    % P_est = P_est - W*H_X*P_est;
     P_est = P_est - W*S*W';
-    % P_est = (eye(size(P_est)) - W*H_X)*P_est;
+    
+    % P_est = P_est - W*H_X*P_est;
+    
     fprintf('Done!\n');
   else
     fprintf('Empty map, no update step necessary!\n');
@@ -101,7 +103,6 @@ for k = 1:T_limit
   for i = 1:map.size()
     map.landmark_vector(i).x = x_est(3 + 2*i - 1:3 + 2*i);
     map.landmark_vector(i).P = P_est(3 + 2*i - 1:3 + 2*i, 3 + 2*i - 1:3 + 2*i);
-
     check_covariance_matrix(map.landmark_vector(i).P, 'Copying landmark after update')
   end
 
@@ -116,7 +117,6 @@ for k = 1:T_limit
 
   fprintf('Performing map update...');
   observation_to_add = laserscans{k}.observations(2:end-1);
-  % new_features = map.update_map(robot, observation_to_add);
   new_features = map.up_map(robot, observation_to_add);
   fprintf('found %d new features\n', length(new_features));
 
@@ -148,7 +148,7 @@ for k = 1:T_limit
 
         dist = sqrt((x_est(i) - x_est(j))^2 + (x_est(i+1) - x_est(j+1))^2);
    
-        if(dist < 0.8)
+        if(dist < min_distance_features)
 
           Pi = norm(P_est(i:i+1,i:i+1));
           Pj = norm(P_est(j:j+1,j:j+1));
@@ -182,17 +182,8 @@ for k = 1:T_limit
     end
   end
 
-  
 
-
-
-   
-%   % plot(map, length(new_features));
-%   % hold on
-% 
-%   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-  if rand(1) < 0.02 && k > 13000
+  if rand(1) < 0.01 && plot_figure == true
       figure(2),clf;
       % set(gcf, 'Position', get(0, 'Screensize'));
       % subplot(1,2,1);       
@@ -254,32 +245,9 @@ for k = 1:T_limit
         hold on;
       end
       
-      
-
-      
-      
-    % subplot(1,2,2);
-    % plot(laserscans{k});
-
-
-      
+           
 
   end
-%   for i = 1:length(new_features)
-%     landmark_index = new_features(i);
-%     obs = observation_to_add{landmark_index};
-%     landmark = Landmark(robot, obs); 
-%     plot(landmark.x(1), landmark.x(2), '*r');
-%     hold on
-%     plotErrorEllipse([landmark.x(1),landmark.x(2)], landmark.P, 0.95,'r');
-%     hold on;
-%   end
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   figure(3), clf;
-%   plot(laserscans{k});
-%   
-%   figure(4), clf;
-%   plot(P_est_norm);
 
 end
 
