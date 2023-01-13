@@ -148,7 +148,7 @@ for k = 1:T_limit
 
         dist = sqrt((x_est(i) - x_est(j))^2 + (x_est(i+1) - x_est(j+1))^2);
    
-        if(dist < 1)
+        if(dist < 0.5)
 
           Pi = norm(P_est(i:i+1,i:i+1));
           Pj = norm(P_est(j:j+1,j:j+1));
@@ -190,9 +190,9 @@ for k = 1:T_limit
 %   % plot(map, length(new_features));
 %   % hold on
 % 
-%   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+%   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  if rand(1) < 0.03 && k > 12000
+  if rand(1) < 0.02 && k > 12000
       figure(2),clf;
       % set(gcf, 'Position', get(0, 'Screensize'));
       % subplot(1,2,1);       

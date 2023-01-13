@@ -288,27 +288,7 @@ methods
         displacement_x = -0.7 + (0.7+0.7)*rand(1,8);
         displacement_y = -0.7 + (0.7+0.7)*rand(1,8);
         
-%         if map.size() > 30
-%             figure(3),clf;
-%             plot(centroid_land(1),centroid_land(2),'ok');
-%             hold on;
-%             plot(centroid_obs(1),centroid_obs(2),'*r');
-%             hold on
-%             for i = 1:length(absolute_obs_vector)
-%                 plot(absolute_obs_vector{i}.x(1),absolute_obs_vector{i}.x(2),'or')
-%                 hold on
-%                 plot(absolute_obs_vector{i}.x(1)+delta_centroids(1),absolute_obs_vector{i}.x(2)+delta_centroids(2),'og');
-%                 hold on
-%                 plot(centroid_obs(1)+delta_centroids(1),centroid_obs(2)+delta_centroids(2),'*g');
-%             end
-%             hold on
-%             for i = 1:length(land_inside)
-%                 plot(map.landmark_vector(land_inside(i)).x(1), map.landmark_vector(land_inside(i)).x(2), '^k');
-%                 axis equal
-%                 hold on;
-%             end
-%             hold on
-%         end    
+%             
         % For each displacement in x
         for z = 1:length(displacement_x)
             % For each displacement in y
@@ -316,6 +296,7 @@ methods
                 % For each angle
                 for j = 1:length(theta_test)
                     % For each observations
+                    % figure(3),clf;
                     for i = 1:length(absolute_obs_vector) 
                         absolute_obs_vector{i}.x(1) = absolute_obs_vector{i}.x(1) + displacement_x(z); 
                         absolute_obs_vector{i}.x(2) = absolute_obs_vector{i}.x(2) + displacement_y(l); 
@@ -325,7 +306,8 @@ methods
                         for k = 1:length(land_inside)
                             
                             d_obs_land = mahalanobis_distance([transformx,transformy]', landmarks(land_inside(k)).x, landmarks(land_inside(k)).P);
-                            if d_obs_land < 2
+                            if d_obs_land < 3
+
                                 index = find(P2==land_inside(k));
                                 if length(index) > 0
                                     % If the landmark is already associated to another observation, then
@@ -346,27 +328,60 @@ methods
                                 end
                                 P1 = [P1; i];
                                 P2 = [P2; land_inside(k)];
+                                
                             end
                         end
                     end
+
+                    if(length(P1) ~= length(P2))
+                        error([ 'The number of correspondences is not the same for P1 and P2,',
+                                ' could not compute the innovation vector']);
+                    end
+                    
+                    if length(P1) >= floor(length(observation_vector)*0.5)
+                        is_closed = true;
+                        fprintf('DETECTED LOOP\n');
+
+
+                        
+                        figure(3),clf;
+                        plot(centroid_land(1),centroid_land(2),'ok');
+                        hold on;
+                        plot(centroid_obs(1),centroid_obs(2),'*r');
+                        hold on
+                        for i = 1:length(absolute_obs_vector)
+                            plot(absolute_obs_vector{i}.x(1),absolute_obs_vector{i}.x(2),'or')
+                            hold on
+                            plot(absolute_obs_vector{i}.x(1)+delta_centroids(1),absolute_obs_vector{i}.x(2)+delta_centroids(2),'og');
+                            hold on
+                            [transformx,transformy] = rototrasl(map,centroid_obs,absolute_obs_vector{i},theta_test(j),delta_centroids);
+                            plot(transformx,transformy,'og');
+                        end
+                        hold on
+                        for i = 1:length(land_inside)
+                            plot(map.landmark_vector(land_inside(i)).x(1), map.landmark_vector(land_inside(i)).x(2), '^k');
+                            axis equal
+                            hold on;
+                        end
+
+                        
+
+
+
+            
+                        pause();
+                        return;
+                    else
+                        P1 = [];
+                        P2 = P1;
+                        fprintf('LOW CORRESPONDENCE\n');
+                    end
+
                 end
             end
         end
 
-        if(length(P1) ~= length(P2))
-            error([ 'The number of correspondences is not the same for P1 and P2,',
-                    ' could not compute the innovation vector']);
-        end
         
-        if length(P1) >= floor(length(observation_vector)*0.9)
-            is_closed = true;
-            fprintf('DETECTED LOOP\n');
-
-            pause();
-        else
-            P1 = [];
-            P2 = P1;
-        end
 
         
     end
