@@ -96,9 +96,9 @@ methods
     %  - the covariance matrix R of the measurement.
     % Reference to equation taken from:
     % https://www.iri.upc.edu/people/jsola/JoanSola/objectes/curs_SLAM/SLAM2D/SLAM%20course.pdf
-    function [z, H_x, R] = compute_innovation(map, robot, observation_vector)
+    function [z, H_x, R] = compute_innovation(map, robot, observation_vector,k_iter)
 
-        [P1, P2] = map.compute_correspondences(robot, observation_vector);
+        [P1, P2] = map.compute_correspondences(robot, observation_vector,k_iter);
 
         % Initialization:
         dim_z   = 2 * length(P1);       % dimension of the observation vector
@@ -151,7 +151,7 @@ methods
     % The correspondence is computed by comparing the distribution of the observations and the
     % landmarks in the map, taking in account of the covariances.
     % If 2 observations are associated to the same landmark, the best association is chosen
-    function [P1, P2] = compute_correspondences(map, robot, observation_vector)
+    function [P1, P2] = compute_correspondences(map, robot, observation_vector,k_iter)
         is_closed = false;
         % Initialization:
         P1 = [];
@@ -160,7 +160,7 @@ methods
         landmarks = map.landmark_vector;
         
         if map.size() > 2*length(observation_vector)
-            [Pone,Ptwo,is_closed] = loop_closure(map, observation_vector, robot);
+            [Pone,Ptwo,is_closed] = loop_closure(map, observation_vector, robot,k_iter);
             P1 = Pone;
             P2 = Ptwo;
         end
@@ -175,7 +175,7 @@ methods
                     % (the mahalanobis distance is a measure of the distance between two multivariate
                     % normal distributions)
                     d_obs_land = mahalanobis_distance(absolute_observation.x, landmarks(j).x, landmarks(j).P);
-                    if d_obs_land < 2
+                    if d_obs_land < 1.5
                         index = find(P2==j);
                         if length(index) > 0
                             % If the landmark is already associated to another observation, then
@@ -240,7 +240,7 @@ methods
     % I can compute the centroids of the new features and 
 
     % CHIAMARE LA FUNZIONE CONTROLLANDO LA LUNGHEZZA DELL MAPPA > 2*lenght(observation_vector)+1
-    function [P1,P2,is_closed] = loop_closure(map, observation_vector, robot)
+    function [P1,P2,is_closed] = loop_closure(map, observation_vector, robot,k_iter)
         P1 = [];
         P2 = [];
         is_closed = false;
@@ -265,7 +265,7 @@ methods
         sumx = 0;
         sumy = sumx;
         % Controlling if there are landmark in the controlling area
-        if length(land_inside) > floor(length(observation_vector)*0.7)
+        if length(observation_vector) > 8 && length(land_inside) > floor(length(observation_vector)*0.6)
             for i = 1:length(land_inside)
                 sumx = sumx + map.landmark_vector(land_inside(i)).x(1);
                 sumy = sumy + map.landmark_vector(land_inside(i)).x(2);
@@ -278,41 +278,43 @@ methods
         centroid_land = [sumx;sumy]./length(land_inside);
 
         delta_centroids = centroid_land - centroid_obs;
-        if point_point_distance(centroid_obs,centroid_land) > 3
+        if point_point_distance(centroid_obs,centroid_land) > 2
             fprintf('CENTROIDS TOO DISTANT\n');
             return;
         end
         % Defining the vector of possibile rotation that we will try to find the correspondence
-        theta_test = linspace(-20,20,7);
+        theta_test = linspace(-30,30,8).*pi/180;
         % Defining the vector of possible displacement in x and y 
         displacement_x = -0.7 + (0.7+0.7)*rand(1,8);
         displacement_y = -0.7 + (0.7+0.7)*rand(1,8);
         
-%             
+            
         % For each displacement in x
         for z = 1:length(displacement_x)
             % For each displacement in y
             for l = 1:length(displacement_y)
                 % For each angle
                 for j = 1:length(theta_test)
-                    % For each observations
-                    % figure(3),clf;
+                    % For each observations   
                     for i = 1:length(absolute_obs_vector) 
-                        absolute_obs_vector{i}.x(1) = absolute_obs_vector{i}.x(1) + displacement_x(z); 
-                        absolute_obs_vector{i}.x(2) = absolute_obs_vector{i}.x(2) + displacement_y(l); 
-                        % Translating and rotating the observations into the landmarks
-                        [transformx,transformy] = rototrasl(map,centroid_obs,absolute_obs_vector{i},theta_test(j),delta_centroids);
+                        % Rototranslation of points
+                        [trxx(i), tryy(i)] = rototrasl(map,delta_centroids,absolute_obs_vector{i},theta_test(j),centroid_land);
+                        % Moving the points a little bit
+                        % trxx(i) = trxx(i);
+                        % tryy(i) = tryy(i);
+                        
+                        trxx(i) = trxx(i) + displacement_x(z);
+                        tryy(i) = tryy(i) + displacement_y(l);
                         % For each landmark in the rectangle
                         for k = 1:length(land_inside)
-                            
-                            d_obs_land = mahalanobis_distance([transformx,transformy]', landmarks(land_inside(k)).x, landmarks(land_inside(k)).P);
-                            if d_obs_land < 3
+                            d_obs_land = mahalanobis_distance([trxx(i),tryy(i)]', landmarks(land_inside(k)).x, landmarks(land_inside(k)).P);
+                            if d_obs_land < 2
 
                                 index = find(P2==land_inside(k));
                                 if length(index) > 0
                                     % If the landmark is already associated to another observation, then
                                     % we choose the best association (the one with the highest probability)
-                                    X1 = [transformx,transformy]';
+                                    X1 = [trxx(i),tryy(i)]';
                                     X2 = landmarks(P2(index)).x;
                                     X3 = landmarks(P2(index)).P;
                                     d_obs_land_2 = mahalanobis_distance(X1, X2, X3);
@@ -331,32 +333,34 @@ methods
                                 
                             end
                         end
+
                     end
 
                     if(length(P1) ~= length(P2))
                         error([ 'The number of correspondences is not the same for P1 and P2,',
                                 ' could not compute the innovation vector']);
                     end
+
                     
-                    if length(P1) >= floor(length(observation_vector)*0.5)
+                    if length(P1) >= floor(length(observation_vector)*0.8)
                         is_closed = true;
                         fprintf('DETECTED LOOP\n');
 
-
-                        
                         figure(3),clf;
-                        plot(centroid_land(1),centroid_land(2),'ok');
-                        hold on;
-                        plot(centroid_obs(1),centroid_obs(2),'*r');
-                        hold on
+                            plot(centroid_land(1),centroid_land(2),'ok');
+                            hold on;
+                            plot(centroid_obs(1),centroid_obs(2),'*r');
+                            hold on
                         for i = 1:length(absolute_obs_vector)
+                            
                             plot(absolute_obs_vector{i}.x(1),absolute_obs_vector{i}.x(2),'or')
                             hold on
-                            plot(absolute_obs_vector{i}.x(1)+delta_centroids(1),absolute_obs_vector{i}.x(2)+delta_centroids(2),'og');
+                            plot(trxx(i),tryy(i),'og')
+            
                             hold on
-                            [transformx,transformy] = rototrasl(map,centroid_obs,absolute_obs_vector{i},theta_test(j),delta_centroids);
-                            plot(transformx,transformy,'og');
+                            
                         end
+                        
                         hold on
                         for i = 1:length(land_inside)
                             plot(map.landmark_vector(land_inside(i)).x(1), map.landmark_vector(land_inside(i)).x(2), '^k');
@@ -374,7 +378,7 @@ methods
                     else
                         P1 = [];
                         P2 = P1;
-                        fprintf('LOW CORRESPONDENCE\n');
+                        %fprintf('LOW CORRESPONDENCE\n');
                     end
 
                 end
@@ -388,22 +392,15 @@ methods
 
     % Function that computes a rototranslation of the observations from the actual reference frame to the ones
     % of the old landmarks
-    function [transformx,transformy] = rototrasl(map,centroid_obs,abs_observation,theta,delta_centroids)
+    function [trxx,tryy] = rototrasl(map,delta_centroids,abs_observation,t,centroid_land)
+        R = [cos(t), -sin(t); sin(t), cos(t)];
 
-        abs_observation.x(1) = abs_observation.x(1) + delta_centroids(1);
-        abs_observation.x(2) = abs_observation.x(2) + delta_centroids(2);
+        traslation = abs_observation.x + delta_centroids;
 
-        origin_new_x = centroid_obs(1) + delta_centroids(1); 
-        origin_new_y = centroid_obs(2) + delta_centroids(2);
-        
-        dist_point_centroid = point_point_distance(abs_observation.x,[origin_new_x,origin_new_y]);
-        angle_observations = atan2(abs_observation.x(2),abs_observation.x(1)); % alpha
-        
-        abs_observation.x(1) = dist_point_centroid*cos(angle_observations + theta);
-        abs_observation.x(2) = dist_point_centroid*sin(angle_observations + theta);
+        TR = centroid_land + R*(traslation-centroid_land);
+        trxx = TR(1);
+        tryy = TR(2);
 
-        transformx = abs_observation.x(1);
-        transformy = abs_observation.x(2);
     end
 
 
@@ -421,9 +418,9 @@ methods
         maxx = 0;
         maxy = 0;
         MAXX = 18;
-        MINX = 5;
-        MAXY = 7;
-        MINY = 3;
+        MINX = 7;
+        MAXY = 9;
+        MINY = 5;
         % Selecting the control area
         for i = 1:length(observation_vector)
            if observation_vector{i}.z(1) > maxx

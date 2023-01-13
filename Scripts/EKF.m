@@ -78,7 +78,7 @@ for k = 1:T_limit
   if map.size() > 0
 
     fprintf('Performing an update step ');
-    [z, H_X, R] = map.compute_innovation(robot, laserscans{k}.observations);
+    [z, H_X, R] = map.compute_innovation(robot, laserscans{k}.observations,k);
     fprintf('using %d observations...', round(length(z)/2));
     S = H_X*P_est*H_X' + R;
     W = P_est*H_X'*inv(S);
@@ -148,7 +148,7 @@ for k = 1:T_limit
 
         dist = sqrt((x_est(i) - x_est(j))^2 + (x_est(i+1) - x_est(j+1))^2);
    
-        if(dist < 0.5)
+        if(dist < 0.8)
 
           Pi = norm(P_est(i:i+1,i:i+1));
           Pj = norm(P_est(j:j+1,j:j+1));
@@ -192,7 +192,7 @@ for k = 1:T_limit
 % 
 %   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  if rand(1) < 0.02 && k > 12000
+  if rand(1) < 0.02 && k > 13000
       figure(2),clf;
       % set(gcf, 'Position', get(0, 'Screensize'));
       % subplot(1,2,1);       
