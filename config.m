@@ -67,7 +67,7 @@ features_param = struct( ...
 
 map_param = struct( ...
               'buffer_length', 20, ...                            % length of the buffer for updating the map
-              'malhanobis_for_correspondence', 2, ...             % distance for checking the correspondence
+              'malhanobis_for_correspondence', 1, ...             % distance for checking the correspondence
               'malhanobis_for_update_map', 0.4, ...               % distance for updating the map buffer
               'malhanobis_for_controlling_new_features', 0.2, ... % distance for controlling new features in update map
               'ratio_map_observation_closure', 2, ...             % Size of the map w.r.t. observations for searching closure

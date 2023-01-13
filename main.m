@@ -38,7 +38,7 @@ if GT
 
     plot(posx,posy,'-r')
     %%
-    figure(5)
+    figure(5),clf
     errx = gt(:,2)' - posx;
     plot(1:1:length(gt),errx)
     hold on

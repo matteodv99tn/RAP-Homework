@@ -77,7 +77,7 @@ for k = 1:T_limit
   % KF update -----------------------------------------------------------
   % Update if the map is not empty
   if map.size() > 0
-
+  
     fprintf('Performing an update step ');
     [z, H_X, R] = map.compute_innovation(robot, laserscans{k}.observations,k);
     fprintf('using %d observations...', round(length(z)/2));
@@ -87,8 +87,8 @@ for k = 1:T_limit
     P_est = P_est - W*S*W';
     
     % P_est = P_est - W*H_X*P_est;
-    
     fprintf('Done!\n');
+  
   else
     fprintf('Empty map, no update step necessary!\n');
   end
@@ -186,7 +186,7 @@ for k = 1:T_limit
   if rand(1) < 0.01 && plot_figure == true
       figure(2),clf;
       % set(gcf, 'Position', get(0, 'Screensize'));
-      % subplot(1,2,1);       
+      subplot(1,2,1);       
       % for i = 1:map.size()
       %   plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
       %   axis equal
@@ -244,6 +244,11 @@ for k = 1:T_limit
         plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
         hold on;
       end
+
+      subplot(1,2,2)
+        plot(laserscans{k})
+        
+    
       
            
 
