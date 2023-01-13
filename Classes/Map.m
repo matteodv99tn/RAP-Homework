@@ -162,6 +162,9 @@ methods
 
         landmarks = map.landmark_vector;
         
+        % I control for a loop only if a previous loop is not just detected.
+        % If a previous loop is detected, I've to move outside a predefined circle before starting
+        % to searching for a new loop
         if map.check_loop == false && point_point_distance(map.x_robot_closure, robot.x) > map.conf.displacement_after_closure
             map.check_loop = true;
         end
@@ -208,6 +211,7 @@ methods
                         end
                         P1 = [P1; i];
                         P2 = [P2; j];
+                        break;
                     end
                 end
             end
@@ -218,7 +222,16 @@ methods
             end
         end
 
-
+    for i = 1:length(observation_vector)
+        if length(find(P1==i)) > 1
+            error('One observation associated to 2 landmarks');
+        end
+    end
+    for i = 1:length(landmarks)
+        if length(find(P2==i)) > 1
+            error('Two observations associated to the same landmark');
+        end
+    end
     
     end
 
@@ -343,6 +356,7 @@ methods
                                 end
                                 P1 = [P1; i];
                                 P2 = [P2; land_inside(k)];
+                                break;
                                 
                             end
                         end

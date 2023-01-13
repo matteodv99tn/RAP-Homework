@@ -66,7 +66,7 @@ features_param = struct( ...
 %              |_|     
 
 map_param = struct( ...
-              'buffer_length', 10, ...                            % length of the buffer for updating the map
+              'buffer_length', 20, ...                            % length of the buffer for updating the map
               'malhanobis_for_correspondence', 2, ...             % distance for checking the correspondence
               'malhanobis_for_update_map', 0.4, ...               % distance for updating the map buffer
               'malhanobis_for_controlling_new_features', 0.2, ... % distance for controlling new features in update map
@@ -94,7 +94,7 @@ map_param = struct( ...
 %  |_____|_|\_\_|  
 %   
 min_distance_features = 0.8; % If 2 feattures are closer then they are collapsed into only one
-plot_figure = false; % to plot the incremental map
+plot_figure = true; % to plot the incremental map
 
 %  ____       _           _   
 % |  _ \ ___ | |__   ___ | |_ 

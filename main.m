@@ -21,7 +21,7 @@ plot_raw_data
 EKF
 
 
-% Ground truth
+% Ground truth comparison
 if GT
     gt = readmatrix(select_GT);
 
