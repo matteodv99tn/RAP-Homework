@@ -1,6 +1,8 @@
 # Robotic Action and Perception
 The current repository contains the code developed for the course [_Robotic Action and Perception_](https://www.miro.ing.unitn.it/category/robotic-perception-and-action/), Masted Degree in Mechatronics Engineering - Department of Industrial Engineering - University of Trento, held by professors De Cecco Mariolino, Luchetti Alessandro. The project is supervised also by Tavernini Matteo, CEO of the startup [_Robosense_](https://www.robosense.it/it/)
 
+# Running the code
+To run the SLAM algorithm is necessary to load a set of data and properly configure the config.m file selecting the correct path. Then the main.m can ben executed  
 
 # Laser Rangefinder Navigation
 
