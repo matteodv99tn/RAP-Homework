@@ -25,7 +25,7 @@ EKF
 if GT
     gt = readmatrix(select_GT);
 
-    figure(4),clf;
+    figure(10),clf;
     plot(gt(:,2),gt(:,3),'-k');
     hold on
     for i = 1:length(pos_robot)

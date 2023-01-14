@@ -399,7 +399,7 @@ methods
                         %     axis equal
                         %     hold on;
                         % end
-                        % pause();
+                        pause();
                         return;
                     else
                         P1 = [];

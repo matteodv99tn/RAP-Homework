@@ -183,7 +183,7 @@ for k = 1:T_limit
   end
 
 
-  if rand(1) < 0.07 && plot_figure == true
+  if rand(1) < 0.01 && plot_figure == true
       figure(2),clf;
       % set(gcf, 'Position', get(0, 'Screensize'));
       subplot(1,2,1);       
