@@ -313,6 +313,10 @@ methods
         % Defining the vector of possible displacement in x and y 
         displacement_x = -map.conf.max_testing_displacement_closure + 2*(map.conf.max_testing_displacement_closure)*rand(1,map.conf.N_displacement_closure);
         displacement_y = -map.conf.max_testing_displacement_closure + 2*(map.conf.max_testing_displacement_closure)*rand(1,map.conf.N_displacement_closure);
+
+        theta_test = [0, theta_test];
+        displacement_x = [0, displacement_x];
+        displacement_y = [0, displacement_y];
         
             
         % For each displacement in x
@@ -325,10 +329,7 @@ methods
                     for i = 1:length(absolute_obs_vector) 
                         % Rototranslation of points
                         [trxx(i), tryy(i)] = rototrasl(map,delta_centroids,absolute_obs_vector{i},theta_test(j),centroid_land);
-                        % Moving the points a little bit
-                        % trxx(i) = trxx(i);
-                        % tryy(i) = tryy(i);
-                        
+                        % Moving the points a little bit                        
                         trxx(i) = trxx(i) + displacement_x(z);
                         tryy(i) = tryy(i) + displacement_y(l);
                         % For each landmark in the rectangle
@@ -394,12 +395,6 @@ methods
                             axis equal
                             hold on;
                         end
-
-                        
-
-
-
-            
                         pause();
                         return;
                     else
@@ -494,8 +489,6 @@ methods
                     land_inside = [land_inside;i];
                 end
             end
-        
-            
 
         end
 

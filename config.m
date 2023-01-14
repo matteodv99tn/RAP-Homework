@@ -18,6 +18,7 @@ select_odometries = 'simul_ODO_1.txt';
 select_laser_times = 'simul_LASER_LASER_SIM_times_1.txt';
 select_odo_times = 'simul_ODO_times_1.txt';
 select_GT = 'simul_GT_1.txt';
+save_datas = true;
 
 %  _                                                
 % | |    __ _ ___  ___ _ __ ___  ___ __ _ _ __  ___ 
@@ -72,12 +73,12 @@ map_param = struct( ...
               'malhanobis_for_controlling_new_features', 0.2, ... % distance for controlling new features in update map
               'ratio_map_observation_closure', 2, ...             % Size of the map w.r.t. observations for searching closure
               'min_number_observations_closure', 8, ...           % Min number of observation for a loop closure
-              'ratio_features_observation_closure', 0.6, ...      % Number of old features in the area w.r.t. number of obs.
-              'max_centroid_distance_closure', 2, ...             % Max centroid admissible distance
-              'max_testing_angle_closure', 30, ...                % Max testing rotation angle for the correspondences of loops
-              'N_theta_closure', 8, ...                           % Number of testing angles
-              'max_testing_displacement_closure', 0.7, ...        % Max testing displacement for the correspondences of loops
-              'N_displacement_closure', 8, ...                    % Number of testing displacements
+              'ratio_features_observation_closure', 0.8, ...      % Number of old features in the area w.r.t. number of obs.
+              'max_centroid_distance_closure', 1.5, ...             % Max centroid admissible distance
+              'max_testing_angle_closure', 20, ...                % Max testing rotation angle for the correspondences of loops
+              'N_theta_closure', 5, ...                           % Number of testing angles
+              'max_testing_displacement_closure', 0.4, ...        % Max testing displacement for the correspondences of loops
+              'N_displacement_closure', 5, ...                    % Number of testing displacements
               'malhanobis_for_closure', 2, ...                    % distance for checking the closure
               'ratio_correspondence_closure', 0.8, ...            % Ratio of correspondence observation features in closuress
               'MAXX', 18, ...                                     % Maximum length of controlling area for closure
@@ -94,7 +95,7 @@ map_param = struct( ...
 %  |_____|_|\_\_|  
 %   
 min_distance_features = 0.8; % If 2 feattures are closer then they are collapsed into only one
-plot_figure = true; % to plot the incremental map
+plot_figure = false; % to plot the incremental map
 
 %  ____       _           _   
 % |  _ \ ___ | |__   ___ | |_ 

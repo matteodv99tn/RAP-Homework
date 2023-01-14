@@ -43,7 +43,7 @@ for k = 1:T_limit
   fprintf('================================> Iteration %6d <================================\n', k);
   fprintf('Current map size: %d\n', map.size());
    
-  check_covariance_matrix(P_est, 'Iteration start');
+  %check_covariance_matrix(P_est, 'Iteration start');
 
   N_feat_map    = map.size();
   F_X           = eye(2*N_feat_map + 3);
@@ -183,31 +183,16 @@ for k = 1:T_limit
   end
 
 
-  if rand(1) < 0.01 && plot_figure == true
+  if rand(1) < 0.07 && plot_figure == true
       figure(2),clf;
       % set(gcf, 'Position', get(0, 'Screensize'));
       subplot(1,2,1);       
-      % for i = 1:map.size()
-      %   plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
-      %   axis equal
-      %   hold on;
-      %   plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
-      %   hold on;
-      % end
-      % hold on
-      % for i = 1:length(laserscans{k}.observations)
-      
-      %   plot(Landmark(robot,laserscans{k}.observations{i}).x(1),Landmark(robot,laserscans{k}.observations{i}).x(2),'or')
-      %   hold on
-      % end
-      % plot(robot.x(1),robot.x(2),'og','MarkerSize',5,'Linewidth',2);
-      % hold on
-
-      
       for i = 1:length(laserscans{k}.observations)
       
         plot(Landmark(robot,laserscans{k}.observations{i}).x(1),Landmark(robot,laserscans{k}.observations{i}).x(2),'or')
         hold on
+        plotErrorEllipse([Landmark(robot,laserscans{k}.observations{i}).x(1),Landmark(robot,laserscans{k}.observations{i}).x(2)], Landmark(robot,laserscans{k}.observations{i}).P, 0.95,'r')
+        hold on;
       end
       plot(robot.x(1),robot.x(2),'og','MarkerSize',5,'Linewidth',2);
       hold on
@@ -215,38 +200,49 @@ for k = 1:T_limit
       [a,b,c,d,maxx,maxy] = compute_boundaries(map,robot,laserscans{k}.observations);
       inside_rect = old_landmark_inside_rectangle(map,robot,laserscans{k}.observations,maxx,maxy);
       
-      plot(a(1),a(2),'+g','MarkerSize',3,'Linewidth',5);
-      hold on
-      plot(b(1),b(2),'+g','MarkerSize',3,'Linewidth',5);
-      hold on
-      plot(c(1),c(2),'+g','MarkerSize',3,'Linewidth',5);
-      hold on
-      plot(d(1),d(2),'+g','MarkerSize',3,'Linewidth',5);
+      rectx = [a(1),b(1),c(1),d(1)];
+      recty = [a(2),b(2),c(2),d(2)];
+      plot(rectx,recty,'-g','Linewidth',1);
       hold on
       
-      for i = 1:length(inside_rect)
-        plot(map.landmark_vector(inside_rect(i)).x(1), map.landmark_vector(inside_rect(i)).x(2), '^k');
-        axis equal
-        % hold on;
-        % plotErrorEllipse([map.landmark_vector(inside_rect(i)).x(1), map.landmark_vector(inside_rect(i)).x(2)], map.landmark_vector(inside_rect(i)).P, 0.95,'k')
-        hold on;
-      end
-      hold on;
-
-      for i = 1:map.size()
-        if length(find(inside_rect == i)) == 0
-            plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
-            axis equal
-            hold on;
-        else
-            continue;
+      if map.check_loop == true
+        for i = 1:length(inside_rect)
+          plot(map.landmark_vector(inside_rect(i)).x(1), map.landmark_vector(inside_rect(i)).x(2), '^k');
+          axis equal
+          hold on;
+          plotErrorEllipse([map.landmark_vector(inside_rect(i)).x(1), map.landmark_vector(inside_rect(i)).x(2)], map.landmark_vector(inside_rect(i)).P, 0.95,'k')
+          hold on;
         end
-        plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
         hold on;
-      end
 
+        for i = 1:map.size()
+          if length(find(inside_rect == i)) == 0
+              plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
+              axis equal
+              hold on;
+          else
+              continue;
+          end
+          plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
+          hold on;
+        end
+      else
+        for i = 1:map.size()
+          plot(map.landmark_vector(i).x(1), map.landmark_vector(i).x(2), '*b');
+          axis equal
+          hold on;
+          plotErrorEllipse([map.landmark_vector(i).x(1),map.landmark_vector(i).x(2)], map.landmark_vector(i).P, 0.95,'b')
+          hold on;
+        end
+      end
+      title('Map updating')
+      xlabel ('x [m]');
+      ylabel ('y [m]');
       subplot(1,2,2)
-        plot(laserscans{k})
+      plot(laserscans{k})
+      title('Observed features')
+      xlabel ('x [m]');
+      ylabel ('y [m]');
         
     
       

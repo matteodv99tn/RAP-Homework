@@ -10,46 +10,62 @@ for i = 1:length(map.landmark_vector)
     
 end
 fclose('all');
-%% Save covariance of the map
-data_map = fopen('SAVED_DATA\map_landmark_covariance.txt','wt');
 
-for i = 1:length(map.landmark_vector)
+%% Save estimated position
+robot_est = fopen('SAVED_DATA\position_estimate.txt','wt');
+
+for i = 1:length(pos_robot)
     
-    p11 = map.landmark_vector(i).P(1,1);
-    p12 = map.landmark_vector(i).P(1,2);
-    p21 = map.landmark_vector(i).P(2,1);
-    p22 = map.landmark_vector(i).P(2,2);
+    x = pos_robot{i}(1);
+    y = pos_robot{i}(2);
+    t = pos_robot{i}(3);
     
-    fprintf(data_map,'%f\n%f\n%f\n%f\n',p11,p12,p21,p22);
+    fprintf(robot_est,'%f %f %f\n',x,y,t);
     
 end
 fclose('all');
 
+
 %% Load data
 loaded_data_map  = readmatrix('SAVED_DATA\map_landmark_data.txt');
-loaded_covariance_map = readmatrix('SAVED_DATA\map_landmark_covariance.txt');
+loaded_robot  = readmatrix('SAVED_DATA\position_estimate.txt');
 
 loaded_landmark_vector = cell(size(loaded_data_map,1),1);
-j = 1;
+loaded_robot_estimate = cell(size(loaded_robot,1),1);
+
 for i=1:size(loaded_data_map,1)
     loaded_landmark_vector{i}.x(1) = loaded_data_map(i,1);
     loaded_landmark_vector{i}.x(2) = loaded_data_map(i,2);
-    loaded_landmark_vector{i}.P(1,1) = loaded_covariance_map(j);
-    loaded_landmark_vector{i}.P(1,2) = loaded_covariance_map(j+1);
-    loaded_landmark_vector{i}.P(2,1) = loaded_covariance_map(j+2);
-    loaded_landmark_vector{i}.P(2,2) = loaded_covariance_map(j+3);
-    j = j + 4;
 end
+
+for i = 1:size(loaded_robot,1)
+    loaded_robot_estimate{i}.x(1) = loaded_robot(i,1);
+    loaded_robot_estimate{i}.x(2) = loaded_robot(i,2);
+    loaded_robot_estimate{i}.x(3) = loaded_robot(i,3);
+end
+
 %% Plot
-figure(1)
-for i=1:length(loaded_landmark_vector)
-    plot(loaded_landmark_vector{i}.x(1),loaded_landmark_vector{i}.x(2),'*b');
-    hold on
+figure(8)
+for i = 1:length(loaded_landmark_vector)
+    mapx(i) = loaded_landmark_vector{i}.x(1);
+    mapy(i) = loaded_landmark_vector{i}.x(2);
 end
+for i = 1:50:length(loaded_robot_estimate)
+    robx(i) = loaded_robot_estimate{i}.x(1);
+    roby(i) = loaded_robot_estimate{i}.x(2);
+end
+plot(mapx,mapy,'*b');
+hold on
+plot(robx,roby,'.r');
+hold on
+plot(robx(1),roby(1),'og','MarkerSize',10,'LineWidth',2);
+hold on
+plot(robx(end),roby(end),'ok','MarkerSize',10,'LineWidth',2);
+title('Estimated Map and Position');
+xlabel('x [m]');
+ylabel('y [m]');
+legend('Map','Trajectory','Start','End','Location','Best');
+
 hold off
-figure(2)
-for i=1:length(loaded_landmark_vector)
-    plot(i,norm(loaded_landmark_vector{i}.P),'*r');
-    hold on
-end
+
 
