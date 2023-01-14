@@ -102,9 +102,9 @@ methods
     %  - the covariance matrix R of the measurement.
     % Reference to equation taken from:
     % https://www.iri.upc.edu/people/jsola/JoanSola/objectes/curs_SLAM/SLAM2D/SLAM%20course.pdf
-    function [z, H_x, R] = compute_innovation(map, robot, observation_vector,k_iter)
+    function [z, H_x, R,is_loop_closed,P1,P2] = compute_innovation(map, robot, observation_vector,k_iter)
         
-        [P1, P2] = map.compute_correspondences(robot, observation_vector,k_iter);
+        [P1, P2, is_loop_closed] = map.compute_correspondences(robot, observation_vector,k_iter);
 
         % Initialization:
         dim_z   = 2 * length(P1);       % dimension of the observation vector
@@ -157,7 +157,7 @@ methods
     % The correspondence is computed by comparing the distribution of the observations and the
     % landmarks in the map, taking in account of the covariances.
     % If 2 observations are associated to the same landmark, the best association is chosen
-    function [P1, P2] = compute_correspondences(map, robot, observation_vector,k_iter)
+    function [P1, P2,is_closed] = compute_correspondences(map, robot, observation_vector,k_iter)
         is_closed = false;
         % Initialization:
         P1 = [];
@@ -173,9 +173,9 @@ methods
         end
 
         if map.size() > map.conf.ratio_map_observation_closure*length(observation_vector) && map.check_loop == true
-            [Pone,Ptwo,is_closed] = loop_closure(map, observation_vector, robot,k_iter);
-            P1 = Pone;
-            P2 = Ptwo;
+            [P1_closed_loop,P2_closed_loop,is_closed] = loop_closure(map, observation_vector, robot,k_iter);
+            P1 = P1_closed_loop;
+            P2 = P2_closed_loop;
             if is_closed == true
                 map.x_robot_closure(1) = robot.x(1);
                 map.x_robot_closure(2) = robot.x(2);
@@ -497,7 +497,6 @@ methods
         end
 
     end
-
     
 
 
@@ -627,6 +626,34 @@ methods
             
             map.landmark_vector = [map.landmark_vector; landmark_observed(nw_land)'];
 
+        end
+    end
+
+
+    % Given the current state of the system, correspondenced(P1_closed_loop,P2_closed_loop), the observaton vector and the map
+    % it computes the cost function and the jacobians for the back-end di bundle adjustment
+    function [cost, J_x, J_lm] = cost_function(map, robot, x_est, observation_vector, P1_closed_loop,P2_closed_loop)
+
+        % Initialization
+        n_obs = length(P1_closed_loop);
+        cost = zeros(2*n_obs, 1);
+        J_x = zeros(2*n_obs, 3);
+        J_lm = zeros(2*n_obs, 2*length(map.landmark_vector));
+
+        % Compute the reprojection error and the Jacobians
+        for i = 1:n_obs
+            % Retrieve the current observation and the corresponding landmark
+            z = observation_vector{P1_closed_loop(i)}.z;
+            landmark = map.landmark_vector(P2_closed_loop(i));
+
+            % Compute the predicted measurement and its Jacobians
+            [h, Jh_x_rob, Jh_x_land] = robot.landmark_to_observation(landmark);
+
+            % Compute the cost function
+            residual = z - h;
+            cost(2*i-1:2*i) = residual;
+            J_x(2*i-1:2*i,:) = Jh_x_rob;
+            J_lm(2*i-1:2*i, 2*P2_closed_loop(i)-1:2*P2_closed_loop(i)) = Jh_x_land;
         end
     end
 

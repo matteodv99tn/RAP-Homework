@@ -36,6 +36,8 @@ tmp2 = 0;
 T_limit = N_laserscans;
 P_est_norm = zeros(T_limit, 1);
 
+is_loop_closed = false;
+
 disp('Starting the cycle')
 % Temporal cycle
 for k = 1:T_limit
@@ -77,18 +79,38 @@ for k = 1:T_limit
   % KF update -----------------------------------------------------------
   % Update if the map is not empty
   if map.size() > 0
-  
-    fprintf('Performing an update step ');
-    [z, H_X, R] = map.compute_innovation(robot, laserscans{k}.observations,k);
-    fprintf('using %d observations...', round(length(z)/2));
-    S = H_X*P_est*H_X' + R;
-    W = P_est*H_X'*inv(S);
-    x_est = x_est + W*z;
-    P_est = P_est - W*S*W';
     
-    % P_est = P_est - W*H_X*P_est;
-    fprintf('Done!\n');
-  
+    % Check if the loop has been closed and it case perform back-end di bundle adjustment
+    % otherwise perform the normal update
+    if is_loop_closed
+      % Perform the Levenberg-Marquardt optimization
+      options = optimoptions('lsqnonlin','Algorithm','levenberg-marquardt');
+      [cost, J_x, J_lm] = cost_function(map, robot, x_est, laserscans{k}.observations, P1_closed_loop,P2_closed_loop);
+      x_opt = lsqnonlin(@(x) cost, x_est,[],[],options);
+
+      % Update the robot state and the landmarks
+      x_est = x_opt;
+      landmark_vector = x_opt(4:end);
+
+      % Update the covariance matrix
+      J = [J_x, J_lm];
+      S = J*P_est*J' + R;
+      W = P_est*J'*inv(S);
+      P_est = P_est - W*S*W';
+
+      is_loop_closed = false;
+    else  
+      fprintf('Performing an update step ');
+      [z, H_X, R,is_loop_closed,P1_closed_loop,P2_closed_loop] = map.compute_innovation(robot, laserscans{k}.observations,k);
+      fprintf('using %d observations...', round(length(z)/2));
+      S = H_X*P_est*H_X' + R;
+      W = P_est*H_X'*inv(S);
+      x_est = x_est + W*z;
+      P_est = P_est - W*S*W';
+      
+      % P_est = P_est - W*H_X*P_est;
+      fprintf('Done!\n');
+    end
   else
     fprintf('Empty map, no update step necessary!\n');
   end
@@ -181,7 +203,10 @@ for k = 1:T_limit
       end
     end
   end
-
+    
+  if k > 13000
+      plot_figure = true;
+  end
 
   if rand(1) < 0.07 && plot_figure == true
       figure(2),clf;
