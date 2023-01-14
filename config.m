@@ -53,7 +53,7 @@ features_param = struct( ...
                 'epsilon_expansion',    0.06, ... %
                 'delta_expansion',      0.1, ...  %
                 'alpha_critic',         5, ...    % Admissible angle between segments 
-                'L_min',                0.8, ...  % Minimum length for a segment
+                'L_min',                0.8, ...  % Minimum length for a segment while removing non proper segments
                 'N_min_check',          10, ...   % Minimum number of points in a segment while removing non proper segments
                 'hidden_tr',            0.1 ...   % Treshold on distance for an hidden wall
             );

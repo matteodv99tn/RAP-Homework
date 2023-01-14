@@ -12,10 +12,11 @@ properties
     landmark_buffer;        % a buffer of all Landmark objects seen by the robot in the "n" past 
                             % scans; this is used to perform the map update to add (or not) new 
                             % landmarks
-    distances;
-    conf;
-    x_robot_closure;
-    check_loop;
+    distances;              % A matrix that stores all the distances bewteen observations for map updating
+    conf;           
+    x_robot_closure;        % Store the robot position at a loop closure
+    check_loop;             % It is used to check for a loop or not
+    count_loop;             % Counts the loop in a simulation
     % grid;
     % grid_configuration;     % configuration parameters for the grid for the map update
     % buffer_i;               % index of the current position in the landmark buffer (used to 
@@ -35,9 +36,11 @@ methods
     function obj = Map(map_param) % constructor
         obj.x_robot_closure = zeros(2,1);
         obj.check_loop = true;
+        obj.count_loop = 0;
         obj.landmark_buffer = cell(1, 0);
         obj.distances = cell(1, 0);
         obj.conf = map_param;
+
 
         %obj.landmark_buffer = cell(1, obj.buffer_length);
         %obj.buffer_i        = 1;
@@ -297,7 +300,7 @@ methods
                 sumy = sumy + map.landmark_vector(land_inside(i)).x(2);
             end
         else
-            fprintf('NOT ENOUGH LANDMARK IN THE AREA\n');
+            % fprintf('NOT ENOUGH LANDMARK IN THE AREA\n');
             return;
         end
         % Computing the centroid landmark
@@ -305,7 +308,7 @@ methods
 
         delta_centroids = centroid_land - centroid_obs;
         if point_point_distance(centroid_obs,centroid_land) > map.conf.max_centroid_distance_closure
-            fprintf('CENTROIDS TOO DISTANT\n');
+            % fprintf('CENTROIDS TOO DISTANT\n');
             return;
         end
         % Defining the vector of possibile rotation that we will try to find the correspondence
@@ -373,29 +376,30 @@ methods
                     if length(P1) >= floor(length(observation_vector)*map.conf.ratio_correspondence_closure)
                         is_closed = true;
                         fprintf('DETECTED LOOP\n');
+                        map.count_loop = map.count_loop + 1;
 
-                        figure(3),clf;
-                            plot(centroid_land(1),centroid_land(2),'ok');
-                            hold on;
-                            plot(centroid_obs(1),centroid_obs(2),'*r');
-                            hold on
-                        for i = 1:length(absolute_obs_vector)
+                        % figure(3),clf;
+                        %     plot(centroid_land(1),centroid_land(2),'ok');
+                        %     hold on;
+                        %     plot(centroid_obs(1),centroid_obs(2),'*r');
+                        %     hold on
+                        % for i = 1:length(absolute_obs_vector)
                             
-                            plot(absolute_obs_vector{i}.x(1),absolute_obs_vector{i}.x(2),'or')
-                            hold on
-                            plot(trxx(i),tryy(i),'og')
+                        %     plot(absolute_obs_vector{i}.x(1),absolute_obs_vector{i}.x(2),'or')
+                        %     hold on
+                        %     plot(trxx(i),tryy(i),'og')
             
-                            hold on
+                        %     hold on
                             
-                        end
+                        % end
                         
-                        hold on
-                        for i = 1:length(land_inside)
-                            plot(map.landmark_vector(land_inside(i)).x(1), map.landmark_vector(land_inside(i)).x(2), '^k');
-                            axis equal
-                            hold on;
-                        end
-                        pause();
+                        % hold on
+                        % for i = 1:length(land_inside)
+                        %     plot(map.landmark_vector(land_inside(i)).x(1), map.landmark_vector(land_inside(i)).x(2), '^k');
+                        %     axis equal
+                        %     hold on;
+                        % end
+                        % pause();
                         return;
                     else
                         P1 = [];
