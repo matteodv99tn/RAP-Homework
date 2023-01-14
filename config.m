@@ -81,10 +81,10 @@ map_param = struct( ...
               'N_displacement_closure', 5, ...                    % Number of testing displacements
               'malhanobis_for_closure', 2, ...                    % distance for checking the closure
               'ratio_correspondence_closure', 0.6, ...            % Ratio of correspondence observation features in closuress
-              'MAXX', 18, ...                                     % Maximum length of controlling area for closure
+              'MAXX', 15, ...                                     % Maximum length of controlling area for closure
               'MINX', 7, ...                                      % Mminimum length of controlling area for closure
-              'MAXY', 9, ...                                      % Maximum width of controlling area for closure
-              'MINY', 5, ...                                       % Maximum width of controlling area for closure
+              'MAXY', 7, ...                                      % Maximum width of controlling area for closure
+              'MINY', 3, ...                                       % Maximum width of controlling area for closure
               'displacement_after_closure', 10 ...                % Distance to be travelled to search for a second loop
             );
 

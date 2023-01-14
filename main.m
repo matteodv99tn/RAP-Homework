@@ -34,7 +34,7 @@ if GT
         covx(i) = cov_robot{i,1}(1,1);
         covy(i) = cov_robot{i,1}(2,2);
 
-    end
+    end 
 
     plot(posx,posy,'-r')
     legend('Ground truth','Estimated','Location','best')

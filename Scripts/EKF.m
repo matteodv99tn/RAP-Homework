@@ -34,6 +34,7 @@ tmp = 0;
 tmp2 = 0;
 
 T_limit = N_laserscans;
+
 P_est_norm = zeros(T_limit, 1);
 
 disp('Starting the cycle')
