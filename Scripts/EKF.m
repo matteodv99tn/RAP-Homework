@@ -184,7 +184,7 @@ for k = 1:T_limit
   end
 
 
-  if rand(1) < 0.01 && plot_figure == true
+  if rand(1) < 0.01 && plot_figure == true && k > 5000
       figure(2),clf;
       % set(gcf, 'Position', get(0, 'Screensize'));
       subplot(1,2,1);       

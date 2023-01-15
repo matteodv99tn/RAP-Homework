@@ -32,8 +32,7 @@ if GT
         posx(i) = pos_robot{i,1}(1);
         posy(i) = pos_robot{i,1}(2);
         covx(i) = cov_robot{i,1}(1,1);
-        covy(i) = cov_robot{i,1}(2,2);
-
+        covy(i) = cov_robot{i,1}(2,2);  
     end 
 
     plot(posx,posy,'-r')
@@ -53,7 +52,7 @@ if GT
     xlabel ('Iteration');
     ylabel ('[m]');
 
-    %%
+    %% 
     figure(6), clf;
     plot(1:1:length(gt),errx)
     hold on

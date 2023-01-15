@@ -13,11 +13,11 @@ load_precomputed_data = true; % Use precomputed features
 plot_animation = false; % Plot the laserscans
 GT = true; % Compare the grand truth
 
-select_laserscans = 'simul_LASER_LASER_SIM_7.txt';
-select_odometries = 'simul_ODO_7.txt';
-select_laser_times = 'simul_LASER_LASER_SIM_times_7.txt';
-select_odo_times = 'simul_ODO_times_7.txt';
-select_GT = 'simul_GT_7.txt';
+select_laserscans = 'simul_LASER_LASER_SIM_9.txt';
+select_odometries = 'simul_ODO_9.txt';
+select_laser_times = 'simul_LASER_LASER_SIM_times_9.txt';
+select_odo_times = 'simul_ODO_times_9.txt';
+select_GT = 'simul_GT_9.txt';
 save_datas = true;
 
 %  _                                                
@@ -67,25 +67,25 @@ features_param = struct( ...
 %              |_|     
 
 map_param = struct( ...
-              'buffer_length', 20, ...                            % length of the buffer for updating the map
-              'malhanobis_for_correspondence', 0.8, ...             % distance for checking the correspondence
-              'malhanobis_for_update_map', 0.4, ...               % distance for updating the map buffer
-              'malhanobis_for_controlling_new_features', 0.2, ... % distance for controlling new features in update map
-              'ratio_map_observation_closure', 1.1, ...             % Size of the map w.r.t. observations for searching closure
+              'buffer_length', 12, ...                            % length of the buffer for updating the map
+              'malhanobis_for_correspondence', 1, ...             % distance for checking the correspondence
+              'malhanobis_for_update_map', 0.7, ...               % distance for updating the map buffer
+              'malhanobis_for_controlling_new_features', 3, ... % distance for controlling new features in update map
+              'ratio_map_observation_closure', 1.5, ...             % Size of the map w.r.t. observations for searching closure
               'min_number_observations_closure', 8, ...           % Min number of observation for a loop closure
-              'ratio_features_observation_closure', 0.7, ...      % Number of old features in the area w.r.t. number of obs.
+              'ratio_features_observation_closure', 0.4, ...      % Number of old features in the area w.r.t. number of obs.
               'max_centroid_distance_closure', 1.5, ...             % Max centroid admissible distance
               'max_testing_angle_closure', 20, ...                % Max testing rotation angle for the correspondences of loops
               'N_theta_closure', 5, ...                           % Number of testing angles
               'max_testing_displacement_closure', 0.4, ...        % Max testing displacement for the correspondences of loops
               'N_displacement_closure', 5, ...                    % Number of testing displacements
               'malhanobis_for_closure', 2, ...                    % distance for checking the closure
-              'ratio_correspondence_closure', 0.6, ...            % Ratio of correspondence observation features in closuress
+              'ratio_correspondence_closure', 0.5, ...            % Ratio of correspondence observation features in closuress
               'MAXX', 15, ...                                     % Maximum length of controlling area for closure
-              'MINX', 7, ...                                      % Mminimum length of controlling area for closure
-              'MAXY', 7, ...                                      % Maximum width of controlling area for closure
-              'MINY', 3, ...                                       % Maximum width of controlling area for closure
-              'displacement_after_closure', 10 ...                % Distance to be travelled to search for a second loop
+              'MINX', 8, ...                                      % Mminimum length of controlling area for closure
+              'MAXY', 9, ...                                      % Maximum width of controlling area for closure
+              'MINY', 5, ...                                       % Maximum width of controlling area for closure
+              'displacement_after_closure', 5 ...                % Distance to be travelled to search for a second loop
             );
 
 %   _____ _     __ 
