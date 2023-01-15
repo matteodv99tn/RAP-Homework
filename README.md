@@ -5,8 +5,6 @@ The current repository contains the code developed for the course [_Robotic Acti
 To run the SLAM algorithm is necessary to load a set of data and properly configure the config.m file selecting the correct path. Then the main.m can ben executed  
 
 # Laser Rangefinder Navigation
-
-
 ## Data
 Data inside the [Data](Data/) folder are obtained by means of the [gridmap navigation simulator](https://www.mrpt.org/list-of-mrpt-apps/application_gridmapnavsimul/) application, an open source software that simulates the mobile robot motion as well as it mesures (with uncertainties); in particular we can generate the following files:
 - `simul_LASER_LASER_SIM.txt`: each row contains the measurements of the LIDAR at each time step; in the particular case, the scan has a field of view of 180° that's divided in 361 samples;
@@ -16,62 +14,53 @@ Data inside the [Data](Data/) folder are obtained by means of the [gridmap navig
 
 ## Repository management
 In the [Scripts](Scripts/) folder there are developed the main script parts that are then imported in the [main](main.m) file:
-- [load_data](Scripts/load_data.m): read laserscan and odometry data. It also process informations and embeds them in a single cell-array (see later);
-- [plot_raw_data](Scripts/plot_raw_data.m): given the cellarray of laserscans in `load_data`, it provides some plots to visualize the raw provided data;
+- [load_data](Scripts/load_data.m): read laserscan and odometry data and performs some basic preprocessing;
+- [plot_raw_data](Scripts/plot_raw_data.m): given the cellarray of laserscans in `load_data`, it provides some plots to visualize the raw provided data as well as the extracted features;
+- [EKF](Scripts/EKF.m): contains the main loop of the Ektended Kalman Filter
 
-
-## Data structures
-File [`load_data.m`](load_data.m) reads the [data](Data/) and converts all information into suitable structures for further manipulation, in particular:
-
-- `laserscans` is a cell-array of `N_laserscans` object `Laserscan`; while loading, features are already pre-computed.
-- `odometries` is a cell-array containing (relative) information of the odometries. Each cell is a struct containing:
-    - `x` increment along the _forward direction_;
-    - `y` increment along the _lateral direction_;
-    - `theta` increment of the robot bearing;
-- `laserscans_times` and `odometries_times` are the time vectors of the recorded laserscans and odometries respectively. Their sampling period is `dt_laserscans` and `dt_odometries` (`dt` is the mean sampling period).
-
-**Note:** the extraction of the feature is time consuming, so once files are processed from the script, relevant information are stored in `.mat` files inside the folder `ProcessedData`. Before calling the `load_data.m` script, make sure that 
-```matlab
-load_precomputed_data = true;
-```
-is defined. If the flag is set to true, then it firstly tries to load (if available) data from the `ProcessedData` folder, otherwise it computes them from scratch. If the flag is set to false, the algorithm will always re-compute everything at each run.
 
 # Classes
 Different classes are developed to get different levels of abstraction of informations. [Naming and ideas mainly obtained by this article (also cited in the references).](https://www.iri.upc.edu/people/jsola/JoanSola/objectes/curs_SLAM/SLAM2D/SLAM%20course.pdf)
+
+Everything has been coded in a Object-Oriented Programming to separate the main function and improve code readibility.
 
 
 ### [Laserscan](Classes/Laserscan.m)
 Handles information of a laserscan. It takes as input a the polar measurement and is able to convert them in cartesian space. 
 
-Has an algorithm to extract feature from the cartesian map.
-
-**TODO**: create function that given the robot state from which the map has been taken from, it computes the absolute position of each computed feature and it's jacobian (both in local, w.r.t the robot, reference frame and ground, w.r.t the map origin).
-
+Internally embedds an algorithm to extract feature from the cartesian map thus generating a vector of observations for the given data that will be used in the Kalman prediction step as well as in the map update.
 
 ### [Odometry](Classes/Odometry.m)
-Stores information of the odometry system on the robot.
-
-**TODO**: given the absolute current state of the robot, provide the state update of the Kalman filter.
+Stores information of the odometry system on the robot in order to have easier comput.
 
 
 ### [Robot](Classes/Robot.m)
-Stores current information of the robot, in particular it's state estimate and covariance matrix.
+Stores current information of the robot, in particular it's state estimate and covariance matrix. 
 
-**TODO**: must create functions to abstract the interaction with the Odometry and Laserscan classes.
+It contains function that allows for a simple calculation of jacobians used in the EKF.
 
 
 ### [Observation](Classes/Observation.m)
-Observation information: **should we use this clas???**
-
-Maybe can be regarded as the fusion of information coming from the robot (it's state estimate) and the laserscan (features) in order to compute landmarks w.r.t. ground and the associated different relevant Jacobians.
+An observation is regarded as a feature extracted in the robot's reference frame and it's characterized by a cartesian position (w.r.t. the robot) and an uncertainty that's computed based on the one of the LiDAR.
 
 
 ### [Landmark](Classes/Landmark.m)
-Contains information (absolute position and covariance matrix) of a landmark inside a map.
+A landmark can be regarded as an observation projected into a fixed reference frame; it's described by a cartesian coordinate and it's uncertainty. 
+
+The goal of the SLAM is thus to localize the robot based on the landmark that it sees and handling newly seen landmarks.
 
 
 ### [Map](Classes/Map.m)
-Handles everything about the map (landmarks and robot moving inside the map).
+Handles the structure of the map, storing all landmarks inside it and providing functions aiming at closing the loop and computing the correspondences between current observations and landmarks inside the map itself.
+
+
+# Notes
+File [`load_data.m`](load_data.m) reads the simulated [data](Data/) and builds cell-arrays of `Laserscan` and `Odometry` objectes. While loading the laserscans, it also pre-computes the features to reduce the overhead at EKF runtime. Since this is a highly time-consuming operation, the pre-processed cell-arrays are stored in a folder [ProcessedData](ProcessedData/) where they can be cleanly loaded each other time. This can be achieved by enabling the following flag in the [main](main.m) script:
+```matlab
+load_precomputed_data = true;
+```
+If no pre-processed data are present in the folder, still raw data are read and all features are extracted, saving the computation in the [ProcessedData](ProcessedData/) folder. If simulation [data](Data/) are replaced, we can so act in two way: by setting the flag `load_precomputed_data = false` or by simply deleting the files in [ProcessedData](ProcessedData/).
+
 
 
 ## Bibliography
