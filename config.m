@@ -13,11 +13,11 @@ load_precomputed_data = true; % Use precomputed features
 plot_animation = false; % Plot the laserscans
 GT = true; % Compare the grand truth
 
-select_laserscans = 'simul_LASER_LASER_SIM_9.txt';
-select_odometries = 'simul_ODO_9.txt';
-select_laser_times = 'simul_LASER_LASER_SIM_times_9.txt';
-select_odo_times = 'simul_ODO_times_9.txt';
-select_GT = 'simul_GT_9.txt';
+select_laserscans = 'simul_LASER_LASER_SIM_3.txt';
+select_odometries = 'simul_ODO_3.txt';
+select_laser_times = 'simul_LASER_LASER_SIM_times_3.txt';
+select_odo_times = 'simul_ODO_times_3.txt';
+select_GT = 'simul_GT_3.txt';
 save_datas = true;
 
 %  _                                                
@@ -67,8 +67,8 @@ features_param = struct( ...
 %              |_|     
 
 map_param = struct( ...
-              'buffer_length', 12, ...                            % length of the buffer for updating the map
-              'malhanobis_for_correspondence', 1, ...             % distance for checking the correspondence
+              'buffer_length', 20, ...                            % length of the buffer for updating the map
+              'malhanobis_for_correspondence',0.8, ...             % distance for checking the correspondence
               'malhanobis_for_update_map', 0.7, ...               % distance for updating the map buffer
               'malhanobis_for_controlling_new_features', 3, ... % distance for controlling new features in update map
               'ratio_map_observation_closure', 1.5, ...             % Size of the map w.r.t. observations for searching closure
