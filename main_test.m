@@ -19,13 +19,17 @@ load_data
 %% SVD estimation
 clc;
 index = 4000;
+delta_index = 5;
 
 ls1  = laserscans{index};
-ls2  = laserscans{index+1};
-odo1 = odometries{index};
-odo2 = odometries{index+1};
+ls2  = laserscans{index+delta_index};
 
-alpha = svd_estimation(ls1, ls2)
+dtheta_tot = 0;
 
-odo1.dtheta
-odo2.dtheta
+for i = index:index+delta_index
+    dtheta_tot = dtheta_tot + odometries{i}.dtheta;
+end
+
+alpha = svd_estimation(ls1, ls2);
+fprintf("SVD estimation = %f\n", alpha);
+fprintf("sum of odometries = %f\n\n", dtheta_tot);
