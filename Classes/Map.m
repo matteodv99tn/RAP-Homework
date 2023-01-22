@@ -586,7 +586,7 @@ methods
                                 break;
                             end
                             if i == buffer_max - 1  
-                                if mahalanobis_distance(map.landmark_buffer{1}(j).x,map.landmark_buffer{buffer_max}(raw).x,map.landmark_buffer{1}(j).P) < map.conf.malhanobis_for_update_map*0.5                   
+                                if mahalanobis_distance(map.landmark_buffer{1}(j).x,map.landmark_buffer{buffer_max}(raw).x,map.landmark_buffer{1}(j).P) < 0.5 % map.conf.malhanobis_for_update_map*0.5                  
                                     nw_land = [nw_land,j]; % If I have a connection up to the last layer I add to the map
                                 end
 

@@ -21,7 +21,7 @@ plot_raw_data
 EKF
 
 
-% Ground truth comparison
+%% Ground truth comparison
 if GT
     gt = readmatrix(select_GT);
 
@@ -29,10 +29,26 @@ if GT
     plot(gt(:,2),gt(:,3),'-k');
     hold on
     for i = 1:length(pos_robot)
+        
         posx(i) = pos_robot{i,1}(1);
         posy(i) = pos_robot{i,1}(2);
+        th(i) = pos_robot{i,1}(3);
+
+        if th(i) > 2*pi
+            th(i) = th(i) - 2*pi;
+        end
+        if th(i) < 0
+            th(i) = th(i) + 2*pi;
+        end
+        if gt(i,4) > 2*pi
+            gt(i,4) = gt(i,4) - 2*pi;
+        end
+        if gt(i,4) < 0
+            gt(i,4) = gt(i,4) + 2*pi;
+        end
         covx(i) = cov_robot{i,1}(1,1);
         covy(i) = cov_robot{i,1}(2,2);  
+        covt(i) = cov_robot{i,1}(3,3);  
     end 
 
     plot(posx,posy,'-r')
@@ -40,7 +56,7 @@ if GT
     title('GT Vs. EST')
     xlabel ('x [m]');
     ylabel ('y [m]');
-    %%
+    %
     figure(5),clf
     errx = gt(:,2)' - posx;
     plot(1:1:length(gt),errx)
@@ -52,7 +68,7 @@ if GT
     xlabel ('Iteration');
     ylabel ('[m]');
 
-    %% 
+    %
     figure(6), clf;
     plot(1:1:length(gt),errx)
     hold on
@@ -68,7 +84,7 @@ if GT
     title('Estimation errors x')
     xlabel ('Iteration');
     ylabel ('[m]');
-    %% 
+    %
     figure(7), clf;
     plot(1:1:length(gt),erry)
     hold on
@@ -84,6 +100,25 @@ if GT
     title('Estimation errors y')
     xlabel ('Iteration');
     ylabel ('[m]');
+
+    %
+    figure(12), clf;
+
+    errt = gt(:,4)' - th;
+    plot(1:1:length(gt),errt);
+    hold on
+    plot(1:1:length(gt),2*covt,'r');
+    hold on
+    plot(1:1:length(gt),-2*covt,'r');
+    hold on
+    plot(1:1:length(gt),3*covt,'g');
+    hold on
+    plot(1:1:length(gt),-3*covt,'g');
+
+    legend('Est. error theta','Est. covariance theta (97%)','','Est. covariance theta (99%)','Location','best')
+    title('Estimation errors theta')
+    xlabel ('Iteration');
+    ylabel ('[rad]');
 end
 
 % Saving the data
