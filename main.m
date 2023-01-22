@@ -34,18 +34,6 @@ if GT
         posy(i) = pos_robot{i,1}(2);
         th(i) = pos_robot{i,1}(3);
 
-        if th(i) > 2*pi
-            th(i) = th(i) - 2*pi;
-        end
-        if th(i) < 0
-            th(i) = th(i) + 2*pi;
-        end
-        if gt(i,4) > 2*pi
-            gt(i,4) = gt(i,4) - 2*pi;
-        end
-        if gt(i,4) < 0
-            gt(i,4) = gt(i,4) + 2*pi;
-        end
         covx(i) = cov_robot{i,1}(1,1);
         covy(i) = cov_robot{i,1}(2,2);  
         covt(i) = cov_robot{i,1}(3,3);  
