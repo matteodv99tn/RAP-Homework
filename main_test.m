@@ -15,8 +15,17 @@ config
 load_precomputed_data = true;
 load_data
 
-% scan = laserscans{1};
-% scan.extract_feature();     
-% 
-% figure(1), clf, hold on;
-% plot(scan)
+
+%% SVD estimation
+clc;
+index = 4000;
+
+ls1  = laserscans{index};
+ls2  = laserscans{index+1};
+odo1 = odometries{index};
+odo2 = odometries{index+1};
+
+alpha = svd_estimation(ls1, ls2)
+
+odo1.dtheta
+odo2.dtheta
